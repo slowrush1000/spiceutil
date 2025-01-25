@@ -22,3 +22,9 @@ class Type(Enum):
     INST_BJT    = 14
     INST_DIODE  = 15
     INST_INST   = 16
+
+class Mode(Enum):
+    MAKE_I_PROBE    =   0
+    MAKE_CELLCAP    =   1
+    MAKE_PGTR       =   2
+    MAKE_VNET       =   3

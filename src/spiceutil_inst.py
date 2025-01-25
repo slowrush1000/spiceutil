@@ -1,14 +1,15 @@
 
-from spiceutil_type     import Type
-from spiceutil_object   import Object
-from spiceutil_node     import Node
+from spiceutil_type         import Type
+from spiceutil_object       import Object
+from spiceutil_node         import Node
+from spiceutil_parameters   import Parameters
 
-class Inst(Object):
+class Inst(Object, Parameters):
     def __init__(self, name = '', type = Type.INIT):
         self.m_name             = name
         self.m_type             = type
         self.m_nodes            = []
-        self.m_cellname         = ''
+        self.m_cell             = None
     def AddNode(self, node):
         self.m_nodes.append(node)
     def GetNodes(self):
@@ -18,7 +19,7 @@ class Inst(Object):
             return self.m_nodes[pos]
         else:
             return None
-    def SetCellname(self, cellname):
-        self.m_cellname         = cellname
-    def GetCellname(self):
-        return self.m_cellname
+    def SetCell(self, cell):
+        self.m_cell = cell
+    def GetCell(self):
+        return self.m_cell
