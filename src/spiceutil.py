@@ -1,23 +1,25 @@
 
 import sys
 import datetime
-from spiceutil_type         import Mode
-from spiceutil_makeiprobe   import Makeiprobe
-from spiceutil_netlist      import Netlist
-
+import netlist
+import parser
+import makeiprobe
 
 class Spiceutil:
-    def __init__(self):
-        self.m_netlist  = Netlist()
-        #
-        self.m_spice_filename   = ''
-        self.m_mode             = Mode.MAKE_I_PROBE
     def PrintUsage(self):
         print(f'spiceutil.exe usage')
-        print(f'spiceutil.py makeiprobe -netlist spice_file -nets netname<...> -subckt_model subckt_model<...> -all_probe')
-    def ReadArgs(self):
+        print(f'spiceutil.py makeiprobe -netlist spice_file -nets netname<...> -subckt_model subckt_model<...> <-top_cell top_cell_name> <-all_probe>')
+    def FindMode(self, args):
+        if 2 > len(args):
+            self.PrintUsage()
+            exit()
+        if 'makeiprobe' == args[1].lower():
+            return netlist.Mode.MAKEIPROBE
     def Run(self, args):
         print(f'# spiceutil.py start ... {datetime.datetime.now()}')
+#        if netlist.Mode.MAKEIPROBE == self.FindMode(args):
+#            makeiprobe  = Makeiprobe()
+#            makeiprobe.Run(args)
         print(f'# spiceutil.py end ... {datetime.datetime.now()}')
 
 def main(args):

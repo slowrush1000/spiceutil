@@ -1,3 +1,4 @@
 .*.sw*
-src/__pycache*
-src/.*.sw*
+src/*/__pycache*
+src/*/.*.sw*
+src/*.*.sw*
