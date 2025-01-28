@@ -15,11 +15,12 @@ class Parser(netlist.Netlist):
         self.m_cur_cellname     = netlist.k_TOP_CELLNAME()
         self.m_cur_cell         = None
         self.m_casesensitive    = False
+        self.m_dollar_comment   = False
         #
-        self.m_default_top_cell = None
-        if False == self.IsExistCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL):
-            default_cell            = netlist.Cell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
-            self.m_default_top_cell = default_cell
+        self.m_default_top_cell = self.GetCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
+        if None == self.m_default_top_cell:
+            self.m_default_top_cell     = netlist.Cell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
+            self.AddCell(netlist.k_TOP_CELLNAME(), self.m_default_top_cell, netlist.Type.CELL_CELL)
         #
         self.m_log              = log
     def SetFilename(self, filename):
@@ -40,6 +41,10 @@ class Parser(netlist.Netlist):
         self.m_casesensitive    = casesensitive
     def GetCasesensitive(self):
         return self.m_casesensitive
+    def SetDollarComment(self, dollar_comment):
+        self.m_dollar_comment   = dollar_comment
+    def GetDollarComment(self):
+        return self.m_dollar_comment
     def SetLog(self, log):
         self.m_log  = log
     def GetLogger(self):
@@ -60,10 +65,8 @@ class Parser(netlist.Netlist):
                 if False == self.GetCasesensitive():
                     line    = line.lower()
                 line    = line.lstrip().rstrip()
+                line    = self.RemoveComment(line, self.GetDollarComment())
                 if 0 == len(line):
-                    continue
-                #
-                if ('*' == line[0]) or ('$' == line[0]):
                     continue
                 #
                 if '+' == line[0]:
@@ -94,7 +97,7 @@ class Parser(netlist.Netlist):
             cell    = netlist.Cell(name, type)
             self.SetCurCellname(name)
             self.AddCell(name, cell, type)
-    def ReadTotalLine1stEndsLine(self, tokens):
+    def ReadTotalLine1stEndsLine(self):
         self.SetCurCellname(netlist.k_TOP_CELLNAME())
         self.SetCurCell(self.GetDefaultTopCell())
     def ReadTotalLine1stModelLine(self, tokens):
@@ -146,10 +149,8 @@ class Parser(netlist.Netlist):
                 if False == self.GetCasesensitive():
                     line    = line.lower()
                 line    = line.lstrip().rstrip()
+                line    = self.RemoveComment(line, self.GetDollarComment())
                 if 0 == len(line):
-                    continue
-                #
-                if ('*' == line[0]) or ('$' == line[0]):
                     continue
                 #
                 if '+' == line[0]:
@@ -167,52 +168,61 @@ class Parser(netlist.Netlist):
             return
         if '.subckt' == tokens[0].lower():
             self.ReadTotalLine2ndSubcktLine(tokens)
-        elif '.end' == tokens[0].lower():
+        elif '.ends' == tokens[0].lower():
             self.ReadTotalLine1stEndsLine()
         elif '.model' == tokens[0].lower():
             pass
         elif '.inc' == tokens[0] or '.include' == tokens[0]:
             self.ReadTotalLine2ndIncludeLine(tokens, filename)
         elif 'r' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndResistorLine(tokens)
         elif 'c' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndCapacitorLine(tokens)
         elif 'l' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndInductorLine(tokens)
         elif 'm' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndMOSFETLine(tokens)
         elif 'q' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndBJTLine(tokens)
         elif 'j' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndJFETLine(tokens)
+        elif 'd' == tokens[0][0]:
+            self.ReadTotalLine2ndDiodeLine(tokens)
         elif 'x' == tokens[0][0]:
-            pass
+            self.ReadTotalLine2ndInstLine(tokens)
     def ReadTotalLine2ndSubcktLine(self, tokens):
-        name        = tokens[1]
-        type        = netlist.Type.CELL_CELL
-        cell        = self.GetCell(name, type)
+        cell_name   = tokens[1]
+        cell_type   = netlist.Type.CELL_CELL
+        cell        = self.GetCell(cell_name, cell_type)
         if None == cell:
-            line    = ' '.join(tokens)
-            self.m_log.GetLogger().info(f"# error : cell({name}) dont exist!")
+            self.m_log.GetLogger().info(f"# error : cell({cell_name}) dont exist!")
             self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
-            self.m_log.GetLogger().info(f'# error : {line}')
             exit()
         self.SetCurCell(cell)
-        for pos in range(2, len(tokens)):
-            self.m_log.GetLogger().info(f'debug-000 {name} - {tokens[pos]}')
-            if False == cell.IsExistNode(tokens[pos]):
-                self.m_log.GetLogger().info(f'debug-001 {name} - {tokens[pos]}')
-                pin     = netlist.Node(tokens[pos], netlist.Type.NODE_PIN)
-                cell.AddPin(tokens[pos], pin)
+        #
+        parameter_start_pos     = self.GetParameterStartPos(tokens)
+        #self.m_log.GetLogger().info(f'parameter_start_pos : {cell_name} - {parameter_start_pos}')
+        if -1 == parameter_start_pos:
+            parameter_start_pos = len(tokens)
+        #
+        for pos in range(2, parameter_start_pos):
+            #self.m_log.GetLogger().debug(f'{cell_name} - {tokens[pos]}')
+            pin_name    = tokens[pos]
+            if False == cell.IsExistNode(pin_name):
+                #self.m_log.GetLogger().debug(f'{cell_name} - {pin_name}')
+                pin     = netlist.Node(pin_name, netlist.Type.NODE_PIN)
+                cell.AddPin(pin_name, pin)
             else:
                 line    = ' '.join(tokens)
-                self.m_log.GetLogger().info(f'# error : cell({name}) pin({tokens[pos]}) is duplicate!')
+                self.m_log.GetLogger().info(f'# error : cell({cell_name}) pin({pin_name}) is duplicate!')
                 self.m_log.GetLogger().info(f'# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})')
                 self.m_log.GetLogger().info(f'# error : {line}')
                 exit()
-        pins    = cell.GetPins()
-        for pin in pins:
-            self.m_log.GetLogger().info(f'debug-111 {pin.GetName()}')
+        #
+        self.ReadParametersCell(cell, tokens, parameter_start_pos)
+        #pins    = cell.GetPins()
+        #for pin in pins:
+        #    self.m_log.GetLogger().debug(f'{pin.GetName()}')
     def ReadTotalLine2ndIncludeLine(self, tokens, filename):
         t_filename  = tokens[1].replace('"', '').replace("'", "")
         # 절대경로 
@@ -225,32 +235,400 @@ class Parser(netlist.Netlist):
             t_filename  = f'{absdirname}/{t_filename}'
             self.Read2nd(t_filename)
     # rname n1 n2 value
-    # rname n1 n2 model r=value ...
-    def ReadTotalLine2ndRLine(self, tokens):
-        name            = tokens[0]
-        inst            = self.m_cur_cell.GetInst(name)
+    # rname n1 n2 model r = value ...
+    def ReadTotalLine2ndResistorLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
         if None == inst:
-            inst        = netlist.Inst(name, netlist.Type.INST_R)
-            cell        = self.Get
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_R)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = self.GetParameterStartPos(tokens)
+        cell_name               = netlist.GetDefaultRCell()
+        if 4 == parameter_start_pos:
+            cell_name           = tokens[3]
+        cell_type               = netlist.Type.CELL_R
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell    = netlist.Cell(cell_name, cell_type)
+            self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
         for pos in range(1, 3):
-            node        = self.m_cur_cell.GetNode(tokens[pos])
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
             if None == node:
-                node    = netlist.Node(name, netlist.Type.INST_R)
-    #def ReadTotalLine2ndMOSFETLine(self, tokens):
-    # xname n1 n2 ... nN cellname l    =    100u w    =    200u
-    # 0     1  2  ... N  N+1      N+2  N+3  N+4  N+5  N+6  N+7
-    def FindParameterStartPos(self, tokens):
-        parameter_start_pos = -1
-        for pos in range(len(tokens) - 1, 1, -1):
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        if 4 == parameter_start_pos:
+            self.ReadParametersInst(inst, tokens, parameter_start_pos)
+        else:
+            parameter_name      = netlist.GetDefaultRCell()
+            parameter_equation  = tokens[3]
+            inst.AddParameter(parameter_name, parameter_equation)
+    # cname n1 n2 value
+    def ReadTotalLine2ndCapacitorLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_C)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = self.GetParameterStartPos(tokens)
+        cell_name               = netlist.GetDefaultRCell()
+        if 4 == parameter_start_pos:
+            cell_name           = tokens[3]
+        cell_type               = netlist.Type.CELL_C
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell    = netlist.Cell(cell_name, cell_type)
+            self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 3):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        if 4 == parameter_start_pos:
+            self.ReadParametersInst(inst, tokens, parameter_start_pos)
+        else:
+            parameter_name      = netlist.GetDefaultRCell()
+            parameter_equation  = tokens[3]
+            inst.AddParameter(parameter_name, parameter_equation)
+    # lname n1 n2 value
+    def ReadTotalLine2ndInductorLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_L)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = self.GetParameterStartPos(tokens)
+        cell_name               = netlist.GetDefaultRCell()
+        if 4 == parameter_start_pos:
+            cell_name           = tokens[3]
+        cell_type               = netlist.Type.CELL_L
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell    = netlist.Cell(cell_name, cell_type)
+            self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 3):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        if 4 == parameter_start_pos:
+            self.ReadParametersInst(inst, tokens, parameter_start_pos)
+        else:
+            parameter_name      = netlist.GetDefaultRCell()
+            parameter_equation  = tokens[3]
+            inst.AddParameter(parameter_name, parameter_equation)
+    # mname n1 n2 n3 n4 cellname l = 100u w = 200u
+    def ReadTotalLine2ndMOSFETLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_MOSFET)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {__file__}:{self.ReadTotalLine2ndMOSFETLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = 6
+        cell_name               = tokens[5].lower()
+        cell_type               = netlist.Type.CELL_NMOS
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell_type           = netlist.Type.CELL_PMOS
+            cell                = self.GetCell(cell_name, cell_type)
+            if None == cell:
+                cell_type       = netlist.Type.CELL_MOSFET
+                cell            = self.GetCell(cell_name, cell_type)
+                if None == cell:
+                    cell_type   = netlist.Type.CELL_MOSFET
+                    cell        = netlist.Cell(cell_name, cell_type)
+                    self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 5):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        self.ReadParametersInst(inst, tokens, parameter_start_pos)
+    # qname n1 n2 n3 model ...
+    def ReadTotalLine2ndBJTLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_BJT)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {__file__}:{self.ReadTotalLine2ndBJTLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = 5
+        cell_name               = tokens[4].lower()
+        cell_type               = netlist.Type.CELL_NPN
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell_type           = netlist.Type.CELL_PNP
+            cell                = self.GetCell(cell_name, cell_type)
+            if None == cell:
+                cell_type       = netlist.Type.CELL_BJT
+                cell            = self.GetCell(cell_name, cell_type)
+                if None == cell:
+                    cell_type   = netlist.Type.CELL_BJT
+                    cell        = netlist.Cell(cell_name, cell_type)
+                    self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 4):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        self.ReadParametersInst(inst, tokens, parameter_start_pos)
+    # jname n1 n2 n3 model ...
+    def ReadTotalLine2ndJFETLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_JFET)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {__file__}:{self.ReadTotalLine2ndJFETLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = 5
+        cell_name               = tokens[4].lower()
+        cell_type               = netlist.Type.CELL_JFET
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell_type           = netlist.Type.CELL_PJF
+            cell                = self.GetCell(cell_name, cell_type)
+            if None == cell:
+                cell_type       = netlist.Type.CELL_NJF
+                cell            = self.GetCell(cell_name, cell_type)
+                if None == cell:
+                    cell_type   = netlist.Type.CELL_JFET
+                    cell        = netlist.Cell(cell_name, cell_type)
+                    self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 4):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        self.ReadParametersInst(inst, tokens, parameter_start_pos)
+    # dname n1 n2 model ...
+    def ReadTotalLine2ndDiodeLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_DIODE)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {__file__}:{self.ReadTotalLine2ndDiodeLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = 4
+        cell_name               = tokens[3].lower()
+        cell_type               = netlist.Type.CELL_DIODE
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell                = netlist.Cell(cell_name, cell_type)
+            self.AddCell(cell_name, cell, cell_type)
+        inst.SetCell(cell)
+        #
+        for pos in range(1, 3):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        self.ReadParametersInst(inst, tokens, parameter_start_pos)
+    # xname n1 n2 ... cell ...
+    def ReadTotalLine2ndInstLine(self, tokens):
+        inst_name       = tokens[0]
+        inst            = self.GetCurCell().GetInst(inst_name)
+        #self.m_log.GetLogger().debug(f'debug - {inst_name} - {self.GetCurCell().GetName()}')
+        if None == inst:
+            inst        = netlist.Inst(inst_name, netlist.Type.INST_INST)
+            self.GetCurCell().AddInst(inst_name, inst)
+        else:
+            self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
+            self.m_log.GetLogger().info(f"# error : {__file__}:{self.ReadTotalLine2ndInstLine.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        #
+        parameter_start_pos     = self.GetParameterStartPos(tokens)
+        cell_name               = tokens[parameter_start_pos - 1].lower()
+        self.m_log.GetLogger().debug(f'debug - inst {inst_name} cell {cell_name}')
+        cell_type               = netlist.Type.CELL_CELL
+        cell                    = self.GetCell(cell_name, cell_type)
+        if None == cell:
+            cell                = netlist.Cell(cell_name, cell_type)
+            self.AddCell(cell_name, cell, cell_type)
+            self.m_log.GetLogger().debug(f'debug - 00 inst {inst_name} cell {cell_name}')
+        inst.SetCell(cell)
+        #
+        for pos in range(1, parameter_start_pos - 1):
+            node_name   = tokens[pos]
+            node        = self.GetCurCell().GetNode(node_name)
+            if None == node:
+                node    = netlist.Node(node_name, netlist.Type.NODE_NODE)
+                self.GetCurCell().AddNode(node_name, node)
+            inst.AddNode(node)
+            node.AddInst(inst_name, inst)
+        #
+        self.ReadParametersInst(inst, tokens, parameter_start_pos)
+    def GetParameterStartPos(self, tokens):
+        parameter_start_pos = len(tokens)
+        for pos in range(1, len(tokens)):
             if '=' == tokens[pos]:
-                parameter_start_pos = pos
+                parameter_start_pos = pos - 1
                 break
         return parameter_start_pos
+    # *...
+    # $...
+    # ... name='equation*equation" * comments
+    def RemoveComment(self, line, dollar_comment = False):
+        t_line              = line
+        t_line              = t_line.replace('"', "'")
+        #print(f'001 {t_line}')
+        # $
+        if True == dollar_comment:
+            dollar_pos      = t_line.find('$')
+            if -1 != dollar_pos:
+                t_line      = t_line[:dollar_pos]
+        #print(f'002 {t_line}')
+        # *
+        quatation_pos       = t_line.rfind("'")
+        #print(f'003 {quatation_pos}')
+        if -1 == quatation_pos:
+            star_pos        = t_line.find("*")
+            #print(f'004 {star_pos}')
+            if -1 == star_pos:
+                return t_line
+            else:
+                return t_line[:star_pos]
+        else:
+            star_pos        = t_line.find("*", quatation_pos)
+            #print(f'005 {star_pos}')
+            if -1 == star_pos:
+                return t_line
+            else:
+                return t_line[:star_pos]
+    def ReadParametersCell(self, cell, tokens, parameter_start_pos):
+        name_pos                = parameter_start_pos
+        equation_start_pos      = len(tokens) 
+        equation_end_pos        = len(tokens)
+        for pos in range(len(tokens) - 1, parameter_start_pos, -1):
+            if '=' == tokens[pos]:
+                name_pos            = pos - 1
+                equation_start_pos  = pos + 1
+                #self.m_log.GetLogger().debug(f'debug : pos : {pos} name_pos : {name_pos} equation_start_pos : {equation_start_pos} equation_end_pos : {equation_end_pos}')
+                name                = tokens[name_pos]
+                equation            = ' '.join(tokens[equation_start_pos:equation_end_pos])
+                equation            = equation.replace(' ', '').replace('\t', '').replace("'", "").replace('"', '')
+                cell.AddParameter(name, equation)
+                equation_end_pos    = name_pos
+    def ReadParametersInst(self, inst, tokens, parameter_start_pos):
+        name_pos                = parameter_start_pos
+        equation_start_pos      = len(tokens) 
+        equation_end_pos        = len(tokens)
+        for pos in range(len(tokens) - 1, parameter_start_pos, -1):
+            if '=' == tokens[pos]:
+                name_pos            = pos - 1
+                equation_start_pos  = pos + 1
+                #self.m_log.GetLogger().debug(f'debug : pos : {pos} name_pos : {name_pos} equation_start_pos : {equation_start_pos} equation_end_pos : {equation_end_pos}')
+                name                = tokens[name_pos]
+                equation            = ' '.join(tokens[equation_start_pos:equation_end_pos])
+                equation            = equation.replace(' ', '').replace('\t', '').replace("'", "").replace('"', '')
+                inst.AddParameter(name, equation)
+                equation_end_pos    = name_pos
     def Run(self):
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) start ... {datetime.datetime.now()}')
         self.Read1st(self.GetFilename())
-        self.PrintInfo()
-        self.PrintNetlist()
+        self.PrintInfo(self.m_log.GetLogger())
+        self.PrintNetlist(self.m_log.GetLogger())
         self.Read2nd(self.GetFilename())
-        self.PrintNetlist()
+        self.PrintInfo(self.m_log.GetLogger())
+        self.PrintNetlist(self.m_log.GetLogger())
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) end ... {datetime.datetime.now()}')
+#
+def TestGetParameterStartPos():
+    my_parser   = Parser()
+    tokens      = [ 'r1', 'n1', 'n2', 'l', '=', '100u', 'w', '=', '200u']
+    parameter_start_pos     = my_parser.GetParameterStartPos(tokens)
+    print(f'{parameter_start_pos}')
+#
+def TestRemoveComment():
+    my_parser   = Parser()
+    line        =   "xname n1 n2 cell l='1*100' "
+    line        +=  'w="200*300" * comments'
+    lines       = []
+    lines.append(line)
+    line        =   "* comment"
+    lines.append(line)
+    line        =   "r1 n1 n2 1000 $comment"
+    lines.append(line)
+    line        =   "$comment"
+    lines.append(line)
+    line        =   "xname n1 n2 cell $comment"
+    lines.append(line)
+    line        =   "xname n1 n2 cell $comment"
+    lines.append(line)
+    for line in lines:
+        print(f'before : {line}')
+        print(f'after  : {my_parser.RemoveComment(line)}')
+#
+if __name__ == '__main__':
+    #TestGetParameterStartPos()
+    TestRemoveComment()
