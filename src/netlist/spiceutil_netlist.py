@@ -45,6 +45,31 @@ class Type(Enum):
     INST_BJT        = 55
     INST_JFET       = 56
     INST_INST       = 57
+#
+def GetTypeName(type):
+    match type:
+        case Type.CELL_R:
+            return 'r'
+        case Type.CELL_L:
+            return 'l'
+        case Type.CELL_C:
+            return 'c'
+        case Type.CELL_DIODE:
+            return 'd'
+        case Type.CELL_NMOS:
+            return 'nmos'
+        case Type.CELL_PMOS:
+            return 'pmos'
+        case Type.CELL_NPN:
+            return 'npn'
+        case Type.CELL_PNP:
+            return 'pnp'
+        case Type.CELL_NJF:
+            return 'njf'
+        case Type.CELL_PJF:
+            return  'pjf'
+        case _:
+            return ''
 
 class Run(Enum):
     MAKEIPROBE      =   0
@@ -173,6 +198,39 @@ class Cell(Object, Parameters):
         self.m_pin_set  = set(self.m_pins)
     def GetPins(self):
         return self.m_pins
+    def GetNetlistStr(self):
+        match self.GetType():
+            case Type.CELL_CELL:
+                return self.GetNetlistStrCell()
+            case Type.CELL_NMOS:
+                return self.GetNetlistStrModel()
+            case Type.CELL_PMOS:
+                return self.GetNetlistStrModel()
+            case Type.CELL_NPN:
+                return self.GetNetlistStrModel()
+            case Type.CELL_PNP:
+                return self.GetNetlistStrModel()
+            case Type.CELL_NJF:
+                return self.GetNetlistStrModel()
+            case Type.CELL_PJF:
+                return self.GetNetlistStrModel()
+            case _:
+                return ''
+    def GetNetlistStrCell(self):
+        netlist_str     = ''
+        netlist_str     += f'.subckt {self.GetName()}'
+        pinnames        = []
+        for pin in self.GetPins():
+            pinnames.append(pin.GetName())
+        netlist_str     += f" {' '.join(pinnames)}\n"
+        netlist_str     += f'.ends'
+        netlist_str     += f'\n'
+        return netlist_str
+    def GetNetlistStrModel(self):
+        netlist_str     = ''
+        netlist_str     += f'.model {self.GetName()} {GetTypeName(self.GetType())}'
+        netlist_str     += f'\n'
+        return netlist_str
 
 class Netlist(Parameters):
     def __init__(self):
@@ -215,3 +273,11 @@ class Netlist(Parameters):
             cell    = self.m_cell_dic[key]
             print(f'{key} {len(cell.GetInstDic())} {len(cell.GetNodeDic())} {len(cell.GetPins())}')
         print(f'# print info end ... {datetime.datetime.now()}')
+    def PrintNetlist(self):
+        print(f'# print netlist start ... {datetime.datetime.now()}')
+        netlist_str     = ''
+        for key in self.m_cell_dic:
+            cell            = self.m_cell_dic[key]
+            netlist_str     += cell.GetNetlistStr()
+        print(f'{netlist_str}')
+        print(f'# print netlist end ... {datetime.datetime.now()}')

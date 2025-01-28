@@ -9,3 +9,4 @@ from .spiceutil_netlist import Cell
 from .spiceutil_netlist import Netlist
 from .spiceutil_netlist import k_TOP_CELLNAME
 from .spiceutil_netlist import k_LINE_STEP
+from .spiceutil_netlist import GetTypeName
