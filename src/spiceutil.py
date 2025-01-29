@@ -1,26 +1,32 @@
-
+#
 import sys
 import datetime
-import netlist
+import logging
+#
 import log
+import makeiprobe
 import netlist
 import parser
-import makeiprobe
-
+#
 class Spiceutil:
     def PrintUsage(self):
         print(f'spiceutil.exe usage')
-        print(f'spiceutil.py makeiprobe -o output_prefix -file spice_file -net netname<-net netname...> <-top_cell top_cell_name> <-all_probe>')
-    def FindMode(self, args):
-        if 2 > len(args):
+        print(f'spiceutil.py makeiprobe output_prefix filename -net netname<...> <-top_cell top_cell_name> <-all_probe>')
+    def GetRunOutputPrefix(self, args):
+        if 3 > len(args):
             self.PrintUsage()
             exit()
+        output_prefix   = args[2]
         if 'makeiprobe' == args[1].lower():
-            return netlist.Run.MAKEIPROBE
+            return [ netlist.Run.MAKEIPROBE, output_prefix ]
     def Run(self, args):
         print(f'# spiceutil.py start ... {datetime.datetime.now()}')
-        if netlist.Run.MAKEIPROBE == self.FindMode(args):
-            makeiprobe  = makeiprobe.Makeiprobe()
+        run_output_prefix   = self.GetRunOutputPrefix(args)
+        if netlist.Run.MAKEIPROBE == run_output_prefix[0]:
+            output_prefix   = run_output_prefix[1]
+            my_log          = log.Log(output_prefix)
+            my_log.GetLogger().setLevel(logging.DEBUG)
+            makeiprobe  = makeiprobe.Makeiprobe(my_log)
             makeiprobe.Run()
         print(f'# spiceutil.py end ... {datetime.datetime.now()}')
 #
