@@ -13,6 +13,7 @@ class Cell(Object, Parameters):
         self.m_node_dic = {}    # key : name, data : node
         self.m_pins     = []
         self.m_pin_set  = None
+        self.m_inst_size    = 0
     def IsExistInst(self, name):
         if name in self.m_inst_dic:
             return True
@@ -51,6 +52,12 @@ class Cell(Object, Parameters):
         self.m_pin_set  = set(self.m_pins)
     def GetPins(self):
         return self.m_pins
+    def SetInstSize(self, inst_size):
+        self.m_inst_size = inst_size
+    def GetInstSize(self):
+        return self.m_inst_size
+    def IncreaseInstSize(self, increase_size = 1):
+        self.m_inst_size += increase_size
     def GetNetlistStr(self, write_subckt_ends = True):
         match self.GetType():
             case Type.CELL_CELL:
@@ -70,24 +77,26 @@ class Cell(Object, Parameters):
             case _:
                 return ''
     def GetNetlistStrCell(self, write_subckt_ends = True):
-        netlist_str     = ''
+        netlist_str     = []
         if True == write_subckt_ends:
-            netlist_str     += f'.subckt {self.GetName()}'
+            netlist_str_subckt  = f'.subckt {self.GetName()}'
             for pin in self.GetPins():
-                netlist_str += f' {pin.GetName()}'
+                netlist_str_subckt  += f' {pin.GetName()}'
             for parameter_name in self.m_equation_value_dic:
                 equation_values = self.m_equation_value_dic[parameter_name]
-                netlist_str += f" {parameter_name} = '{equation_values.GetEquation()}'"
-            netlist_str     += '\n'
+                netlist_str_subckt  += f" {parameter_name} = '{equation_values.GetEquation()}'"
+            netlist_str.append(netlist_str_subckt) 
         for inst_name in self.m_inst_dic:
             inst        = self.m_inst_dic[inst_name]
-            netlist_str += inst.GetNetlistStr()
+            netlist_str.append(inst.GetNetlistStr())
         if True == write_subckt_ends:
-            netlist_str     += f'.ends'
-        netlist_str     += f'\n'
+            netlist_str.append(f'.ends')
         return netlist_str
     def GetNetlistStrModel(self):
-        netlist_str     = ''
-        netlist_str     += f'.model {self.GetName()} {GetTypeName(self.GetType())}'
-        netlist_str     += f'\n'
+        netlist_str         = []
+        netlist_str_model   = f'.model {self.GetName()} {GetTypeName(self.GetType())}'
+        for parameter_name in self.m_equation_value_dic:
+            equation_value  = self.m_equation_value_dic[parameter_name]
+            netlist_str_model   += f' {parameter_name} = {equation_value.GetEquation()}'
+        netlist_str.append(netlist_str_model)
         return netlist_str

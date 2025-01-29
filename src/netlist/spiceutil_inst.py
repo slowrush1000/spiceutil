@@ -27,19 +27,34 @@ class Inst(Object, Parameters):
     def GetCell(self):
         return self.m_cell
     def GetNetlistStr(self):
+        print(f'debug- {self.GetName()} {self.GetCell().GetName()}')
+        for parameter_name_1 in self.m_equation_value_dic:
+            equation_value_1    = self.m_equation_value_dic[parameter_name_1]
+            print(f'debug- {parameter_name_1} : {equation_value_1.GetEquation()}')
+        #
         netlist_str     = f'{self.GetName()}'
         for node in self.m_nodes:
             netlist_str += f' {node.GetName()}'
-        if GetDefaultRCell() == self.GetCell().GetName():
-            pass
-        elif GetDefaultLCell() == self.GetCell().GetName():
-            pass
-        elif GetDefaultCCell() == self.GetCell().GetName():
-            pass
+        #
+        if (GetDefaultRCell() == self.GetCell().GetName()) and (Type.INST_R == self.GetType()):
+            if GetDefaultRCell() in self.m_equation_value_dic:
+                equation_value  = self.m_equation_value_dic[GetDefaultRCell()]
+                netlist_str     += f' {equation_value.GetEquation()}'
+        elif (GetDefaultLCell() == self.GetCell().GetName()) and (Type.INST_L == self.GetType()):
+            if GetDefaultLCell() in self.m_equation_value_dic:
+                equation_value  = self.m_equation_value_dic[GetDefaultLCell()]
+                netlist_str     += f' {equation_value.GetEquation()}'
+        elif (GetDefaultCCell() == self.GetCell().GetName()) and (Type.INST_C == self.GetType()):
+            if GetDefaultCCell() in self.m_equation_value_dic:
+                equation_value  = self.m_equation_value_dic[GetDefaultCCell()]
+                netlist_str     += f' {equation_value.GetEquation()}'
         else:
             netlist_str += f' {self.GetCell().GetName()}'
+        #
         for parameter_name in self.m_equation_value_dic:
+            if (GetDefaultRCell() == self.GetCell().GetName()) or (GetDefaultLCell() == self.GetCell().GetName()) or (GetDefaultCCell() == self.GetCell().GetName()):
+                continue
             equation_value  = self.m_equation_value_dic[parameter_name]
             netlist_str += f" {parameter_name} = '{equation_value.GetEquation()}'"
-        netlist_str     += '\n'
         return netlist_str
+        #

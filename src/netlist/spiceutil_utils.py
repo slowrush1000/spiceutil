@@ -1,6 +1,11 @@
 #
 from enum import Enum
 #
+class Version:
+    def __init__(self):
+        self.m_program  = 'spiceutil'
+        self.m_version  = '20250119.0.0'
+#
 def k_TOP_CELLNAME():
     return '___xxx_top_xxx___'
 def k_LINE_STEP():
@@ -11,6 +16,12 @@ def GetDefaultLCell():
     return 'l'
 def GetDefaultCCell():
     return 'c'
+def GetProgram():
+    my_version  = Version()
+    return my_version.m_program
+def GetVersion():
+    my_version  = Version()
+    return my_version.m_version
 #
 class Type(Enum):
     INIT            = 0

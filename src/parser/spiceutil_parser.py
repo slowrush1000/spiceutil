@@ -1,4 +1,3 @@
-
 #
 import sys
 import os
@@ -15,7 +14,8 @@ class Parser(netlist.Netlist):
         self.m_cur_cellname     = netlist.k_TOP_CELLNAME()
         self.m_cur_cell         = None
         self.m_casesensitive    = False
-        self.m_dollar_comment   = False
+        self.m_dollar_comment   = True
+        self.m_width            = 80
         #
         self.m_default_top_cell = self.GetCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
         if None == self.m_default_top_cell:
@@ -45,6 +45,10 @@ class Parser(netlist.Netlist):
         self.m_dollar_comment   = dollar_comment
     def GetDollarComment(self):
         return self.m_dollar_comment
+    def SetWidth(self, width):
+        self.m_width = width
+    def GetWidth(self):
+        return self.m_width
     def SetLog(self, log):
         self.m_log  = log
     def GetLogger(self):
@@ -219,6 +223,8 @@ class Parser(netlist.Netlist):
                 self.m_log.GetLogger().info(f'# error : {line}')
                 exit()
         #
+        cell.MakePinSet()
+        #
         self.ReadParametersCell(cell, tokens, parameter_start_pos)
         #pins    = cell.GetPins()
         #for pin in pins:
@@ -234,8 +240,6 @@ class Parser(netlist.Netlist):
             absdirname  = os.path.dirname(absfilename)
             t_filename  = f'{absdirname}/{t_filename}'
             self.Read2nd(t_filename)
-    # rname n1 n2 value
-    # rname n1 n2 model r = value ...
     def ReadTotalLine2ndResistorLine(self, tokens):
         inst_name       = tokens[0]
         inst            = self.GetCurCell().GetInst(inst_name)
@@ -249,14 +253,18 @@ class Parser(netlist.Netlist):
         #
         parameter_start_pos     = self.GetParameterStartPos(tokens)
         cell_name               = netlist.GetDefaultRCell()
-        if 4 == parameter_start_pos:
-            cell_name           = tokens[3]
+        # rname n1 n2 model r = value ...
+        if 4 == parameter_start_pos and 4 < len(tokens):
+            cell_name           = tokens[parameter_start_pos - 1]
+        #self.m_log.GetLogger().debug(f'debug- {cell_name}')
+        # rname n1 n2 value
         cell_type               = netlist.Type.CELL_R
         cell                    = self.GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
             self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 3):
             node_name   = tokens[pos]
@@ -267,8 +275,10 @@ class Parser(netlist.Netlist):
             inst.AddNode(node)
             node.AddInst(inst_name, inst)
         #
-        if 4 == parameter_start_pos:
+        # rname n1 n2 model r = value ...
+        if 4 == parameter_start_pos and 4 < len(tokens):
             self.ReadParametersInst(inst, tokens, parameter_start_pos)
+        # rname n1 n2 value
         else:
             parameter_name      = netlist.GetDefaultRCell()
             parameter_equation  = tokens[3]
@@ -286,15 +296,17 @@ class Parser(netlist.Netlist):
             exit()
         #
         parameter_start_pos     = self.GetParameterStartPos(tokens)
-        cell_name               = netlist.GetDefaultRCell()
-        if 4 == parameter_start_pos:
-            cell_name           = tokens[3]
+        cell_name               = netlist.GetDefaultCCell()
+        # cname n1 n2 model r = value ...
+        if 4 == parameter_start_pos and 4 < len(tokens):
+            cell_name           = tokens[parameter_start_pos - 1]
         cell_type               = netlist.Type.CELL_C
         cell                    = self.GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
             self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 3):
             node_name   = tokens[pos]
@@ -305,10 +317,10 @@ class Parser(netlist.Netlist):
             inst.AddNode(node)
             node.AddInst(inst_name, inst)
         #
-        if 4 == parameter_start_pos:
+        if 4 == parameter_start_pos and 4 < len(tokens):
             self.ReadParametersInst(inst, tokens, parameter_start_pos)
         else:
-            parameter_name      = netlist.GetDefaultRCell()
+            parameter_name      = netlist.GetDefaultCCell()
             parameter_equation  = tokens[3]
             inst.AddParameter(parameter_name, parameter_equation)
     # lname n1 n2 value
@@ -320,19 +332,21 @@ class Parser(netlist.Netlist):
             self.GetCurCell().AddInst(inst_name, inst)
         else:
             self.m_log.GetLogger().info(f"# error : inst({inst_name}) is duplicate in cell({self.GetCurCellname()})")
-            self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
+            self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndInductorLine.__name__}:{inspect.currentframe().f_lineno})")
             exit()
         #
         parameter_start_pos     = self.GetParameterStartPos(tokens)
-        cell_name               = netlist.GetDefaultRCell()
-        if 4 == parameter_start_pos:
-            cell_name           = tokens[3]
+        cell_name               = netlist.GetDefaultLCell()
+        # lname n1 n2 model r = value ...
+        if 4 == parameter_start_pos and 4 < len(tokens):
+            cell_name           = tokens[parameter_start_pos - 1]
         cell_type               = netlist.Type.CELL_L
         cell                    = self.GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
             self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 3):
             node_name   = tokens[pos]
@@ -343,10 +357,10 @@ class Parser(netlist.Netlist):
             inst.AddNode(node)
             node.AddInst(inst_name, inst)
         #
-        if 4 == parameter_start_pos:
+        if 4 == parameter_start_pos and 4 < len(tokens):
             self.ReadParametersInst(inst, tokens, parameter_start_pos)
         else:
-            parameter_name      = netlist.GetDefaultRCell()
+            parameter_name      = netlist.GetDefaultLCell()
             parameter_equation  = tokens[3]
             inst.AddParameter(parameter_name, parameter_equation)
     # mname n1 n2 n3 n4 cellname l = 100u w = 200u
@@ -376,6 +390,7 @@ class Parser(netlist.Netlist):
                     cell        = netlist.Cell(cell_name, cell_type)
                     self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 5):
             node_name   = tokens[pos]
@@ -414,6 +429,7 @@ class Parser(netlist.Netlist):
                     cell        = netlist.Cell(cell_name, cell_type)
                     self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 4):
             node_name   = tokens[pos]
@@ -452,6 +468,7 @@ class Parser(netlist.Netlist):
                     cell        = netlist.Cell(cell_name, cell_type)
                     self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 4):
             node_name   = tokens[pos]
@@ -483,6 +500,7 @@ class Parser(netlist.Netlist):
             cell                = netlist.Cell(cell_name, cell_type)
             self.AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
+        cell.IncreaseInstSize()
         #
         for pos in range(1, 3):
             node_name   = tokens[pos]
@@ -497,6 +515,11 @@ class Parser(netlist.Netlist):
     # xname n1 n2 ... cell ...
     def ReadTotalLine2ndInstLine(self, tokens):
         inst_name       = tokens[0]
+        ## debug
+        #print_debug     = False
+        #if 'xc' == inst_name:
+        #    print_debug     = True
+        ##
         inst            = self.GetCurCell().GetInst(inst_name)
         #self.m_log.GetLogger().debug(f'debug - {inst_name} - {self.GetCurCell().GetName()}')
         if None == inst:
@@ -509,15 +532,27 @@ class Parser(netlist.Netlist):
         #
         parameter_start_pos     = self.GetParameterStartPos(tokens)
         cell_name               = tokens[parameter_start_pos - 1].lower()
-        self.m_log.GetLogger().debug(f'debug - inst {inst_name} cell {cell_name}')
+        #self.m_log.GetLogger().debug(f'debug - inst {inst_name} cell {cell_name}')
         cell_type               = netlist.Type.CELL_CELL
         cell                    = self.GetCell(cell_name, cell_type)
+        ## debug
+        #if True == print_debug:
+        #    self.m_log.GetLogger().debug(f'inst {inst_name} cell {cell_name}')
+        ##
         if None == cell:
             cell                = netlist.Cell(cell_name, cell_type)
             self.AddCell(cell_name, cell, cell_type)
-            self.m_log.GetLogger().debug(f'debug - 00 inst {inst_name} cell {cell_name}')
+            #self.m_log.GetLogger().debug(f'debug - 00 inst {inst_name} cell {cell_name}')
+        ## debug
+        #if True == print_debug:
+        #    self.m_log.GetLogger().debug(f'cell {cell.GetNetlistStr()}')
+        ##
         inst.SetCell(cell)
-        #
+        cell.IncreaseInstSize()
+        ## debug
+        #if True == print_debug:
+        #    self.m_log.GetLogger().debug(f'inst {inst.GetNetlistStr()} {inst.GetCell().GetName()}')
+        ##
         for pos in range(1, parameter_start_pos - 1):
             node_name   = tokens[pos]
             node        = self.GetCurCell().GetNode(node_name)
@@ -538,7 +573,7 @@ class Parser(netlist.Netlist):
     # *...
     # $...
     # ... name='equation*equation" * comments
-    def RemoveComment(self, line, dollar_comment = False):
+    def RemoveComment(self, line, dollar_comment = True):
         t_line              = line
         t_line              = t_line.replace('"', "'")
         #print(f'001 {t_line}')
@@ -587,7 +622,6 @@ class Parser(netlist.Netlist):
             if '=' == tokens[pos]:
                 name_pos            = pos - 1
                 equation_start_pos  = pos + 1
-                #self.m_log.GetLogger().debug(f'debug : pos : {pos} name_pos : {name_pos} equation_start_pos : {equation_start_pos} equation_end_pos : {equation_end_pos}')
                 name                = tokens[name_pos]
                 equation            = ' '.join(tokens[equation_start_pos:equation_end_pos])
                 equation            = equation.replace(' ', '').replace('\t', '').replace("'", "").replace('"', '')
@@ -598,9 +632,11 @@ class Parser(netlist.Netlist):
         self.Read1st(self.GetFilename())
         self.PrintInfo(self.m_log.GetLogger())
         self.PrintNetlist(self.m_log.GetLogger())
+        self.PrintNetlist(self.m_log.GetLogger(), '1st.spc', self.GetWidth())
         self.Read2nd(self.GetFilename())
         self.PrintInfo(self.m_log.GetLogger())
         self.PrintNetlist(self.m_log.GetLogger())
+        self.PrintNetlist(self.m_log.GetLogger(), '2nd.spc', self.GetWidth())
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) end ... {datetime.datetime.now()}')
 #
 def TestGetParameterStartPos():
@@ -624,6 +660,8 @@ def TestRemoveComment():
     line        =   "xname n1 n2 cell $comment"
     lines.append(line)
     line        =   "xname n1 n2 cell $comment"
+    lines.append(line)
+    line        =   ".subckt a 1 2 l=100u w=200u $ aaa"
     lines.append(line)
     for line in lines:
         print(f'before : {line}')
