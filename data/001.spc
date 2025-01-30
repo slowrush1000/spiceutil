@@ -2,18 +2,19 @@ $ 001.spc
 .subckt a 1 2 l=100u w=200u $ aaa
 r1  1   aaa 100
 r2  aaa 2   200
-r3  1   2   resStar r=100
-c1  1   2   10
-l1  1   2   1n
+r3  1   vdd   resStar r=100
+c1  1   vdd   10
+l1  1   vss   1n
 .ends
 
 .subckt b 1 2 l='aaa + 1000u * 200' w = bbbb * bbb
-m1  1 2 3 4 n l=100u w=200u
-m2  4 3 2 1 p l=100u w=400u
+m1  1 2 vss vss n l=100u w=200u
+m2  1 2 vdd vdd p l=100u w=400u
+xaaa 1 2 aaa
 .ends
 
 .subckt c 1 2 $ ccc
-d1  1   2   ddd
+d1  1   vdd   ddd
 .ends
 
 xa 1 2 a l='xa' w='xb'

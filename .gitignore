@@ -1,6 +1,7 @@
 .*.sw*
 *.log
 *.spc
+*.probe
 src/*.*.sw*
 src/__pycache__*
 src/*/.*.sw*

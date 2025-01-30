@@ -7,21 +7,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import netlist
 import log
 #
-class Parser(netlist.Netlist):
+class Parser:
     def __init__(self, log = None):
-        super().__init__()
         self.m_filename         = ''
         self.m_cur_cellname     = netlist.k_TOP_CELLNAME()
         self.m_cur_cell         = None
         self.m_casesensitive    = False
         self.m_dollar_comment   = True
         self.m_width            = 80
-        #
-        self.m_default_top_cell = self.GetCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
+        self.m_netlist          = netlist.Netlist()
+        self.m_default_top_cell = self.m_netlist.GetCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
         if None == self.m_default_top_cell:
             self.m_default_top_cell     = netlist.Cell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
-            self.AddCell(netlist.k_TOP_CELLNAME(), self.m_default_top_cell, netlist.Type.CELL_CELL)
-        #
+            self.m_netlist.AddCell(netlist.k_TOP_CELLNAME(), self.m_default_top_cell, netlist.Type.CELL_CELL)
         self.m_log              = log
     def SetFilename(self, filename):
         self.m_filename         = os.path.abspath(filename)
@@ -53,6 +51,10 @@ class Parser(netlist.Netlist):
         self.m_log  = log
     def GetLogger(self):
         return self.m_log
+    def SetNetlist(self, netlist):
+        self.m_netlist  = netlist
+    def GetNetlist(self):
+        return self.m_netlist
     def Read1st(self, filename):
         self.m_log.GetLogger().info(f'# read file({filename}) 1st start ... {datetime.datetime.now()}')
         nlines      = 0
@@ -97,10 +99,10 @@ class Parser(netlist.Netlist):
     def ReadTotalLine1stSubcktLine(self, tokens):
         name        = tokens[1]
         type        = netlist.Type.CELL_CELL
-        if False == self.IsExistCell(name, type):
+        if False == self.GetNetlist().IsExistCell(name, type):
             cell    = netlist.Cell(name, type)
             self.SetCurCellname(name)
-            self.AddCell(name, cell, type)
+            self.GetNetlist().AddCell(name, cell, type)
     def ReadTotalLine1stEndsLine(self):
         self.SetCurCellname(netlist.k_TOP_CELLNAME())
         self.SetCurCell(self.GetDefaultTopCell())
@@ -123,9 +125,9 @@ class Parser(netlist.Netlist):
         elif 'pjf' == type_name:
             type    = netlist.Type.CELL_PJF
         #
-        if False == self.IsExistCell(name, type):
+        if False == self.GetNetlist().IsExistCell(name, type):
             cell    = netlist.Cell(name, type)
-            self.AddCell(name, cell, type)
+            self.GetNetlist().AddCell(name, cell, type)
     def ReadTotalLine1stIncludeLine(self, tokens, filename):
         t_filename  = tokens[1].replace('"', '').replace("'", "")
         # 절대경로 
@@ -197,7 +199,7 @@ class Parser(netlist.Netlist):
     def ReadTotalLine2ndSubcktLine(self, tokens):
         cell_name   = tokens[1]
         cell_type   = netlist.Type.CELL_CELL
-        cell        = self.GetCell(cell_name, cell_type)
+        cell        = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             self.m_log.GetLogger().info(f"# error : cell({cell_name}) dont exist!")
             self.m_log.GetLogger().info(f"# error : {self.ReadTotalLine2ndSubcktLine.__name__}:{inspect.currentframe().f_lineno})")
@@ -259,10 +261,10 @@ class Parser(netlist.Netlist):
         #self.m_log.GetLogger().debug(f'debug- {cell_name}')
         # rname n1 n2 value
         cell_type               = netlist.Type.CELL_R
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
-            self.AddCell(cell_name, cell, cell_type)
+            self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -301,10 +303,10 @@ class Parser(netlist.Netlist):
         if 4 == parameter_start_pos and 4 < len(tokens):
             cell_name           = tokens[parameter_start_pos - 1]
         cell_type               = netlist.Type.CELL_C
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
-            self.AddCell(cell_name, cell, cell_type)
+            self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -341,10 +343,10 @@ class Parser(netlist.Netlist):
         if 4 == parameter_start_pos and 4 < len(tokens):
             cell_name           = tokens[parameter_start_pos - 1]
         cell_type               = netlist.Type.CELL_L
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell    = netlist.Cell(cell_name, cell_type)
-            self.AddCell(cell_name, cell, cell_type)
+            self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -378,17 +380,17 @@ class Parser(netlist.Netlist):
         parameter_start_pos     = 6
         cell_name               = tokens[5].lower()
         cell_type               = netlist.Type.CELL_NMOS
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell_type           = netlist.Type.CELL_PMOS
-            cell                = self.GetCell(cell_name, cell_type)
+            cell                = self.GetNetlist().GetCell(cell_name, cell_type)
             if None == cell:
                 cell_type       = netlist.Type.CELL_MOSFET
-                cell            = self.GetCell(cell_name, cell_type)
+                cell            = self.GetNetlist().GetCell(cell_name, cell_type)
                 if None == cell:
                     cell_type   = netlist.Type.CELL_MOSFET
                     cell        = netlist.Cell(cell_name, cell_type)
-                    self.AddCell(cell_name, cell, cell_type)
+                    self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -417,17 +419,17 @@ class Parser(netlist.Netlist):
         parameter_start_pos     = 5
         cell_name               = tokens[4].lower()
         cell_type               = netlist.Type.CELL_NPN
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell_type           = netlist.Type.CELL_PNP
-            cell                = self.GetCell(cell_name, cell_type)
+            cell                = self.GetNetlist().GetCell(cell_name, cell_type)
             if None == cell:
                 cell_type       = netlist.Type.CELL_BJT
-                cell            = self.GetCell(cell_name, cell_type)
+                cell            = self.GetNetlist().GetCell(cell_name, cell_type)
                 if None == cell:
                     cell_type   = netlist.Type.CELL_BJT
                     cell        = netlist.Cell(cell_name, cell_type)
-                    self.AddCell(cell_name, cell, cell_type)
+                    self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -456,17 +458,17 @@ class Parser(netlist.Netlist):
         parameter_start_pos     = 5
         cell_name               = tokens[4].lower()
         cell_type               = netlist.Type.CELL_JFET
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell_type           = netlist.Type.CELL_PJF
-            cell                = self.GetCell(cell_name, cell_type)
+            cell                = self.GetNetlist().GetCell(cell_name, cell_type)
             if None == cell:
                 cell_type       = netlist.Type.CELL_NJF
-                cell            = self.GetCell(cell_name, cell_type)
+                cell            = self.GetNetlist().GetCell(cell_name, cell_type)
                 if None == cell:
                     cell_type   = netlist.Type.CELL_JFET
                     cell        = netlist.Cell(cell_name, cell_type)
-                    self.AddCell(cell_name, cell, cell_type)
+                    self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -495,10 +497,10 @@ class Parser(netlist.Netlist):
         parameter_start_pos     = 4
         cell_name               = tokens[3].lower()
         cell_type               = netlist.Type.CELL_DIODE
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         if None == cell:
             cell                = netlist.Cell(cell_name, cell_type)
-            self.AddCell(cell_name, cell, cell_type)
+            self.GetNetlist().AddCell(cell_name, cell, cell_type)
         inst.SetCell(cell)
         cell.IncreaseInstSize()
         #
@@ -534,14 +536,14 @@ class Parser(netlist.Netlist):
         cell_name               = tokens[parameter_start_pos - 1].lower()
         #self.m_log.GetLogger().debug(f'debug - inst {inst_name} cell {cell_name}')
         cell_type               = netlist.Type.CELL_CELL
-        cell                    = self.GetCell(cell_name, cell_type)
+        cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
         ## debug
         #if True == print_debug:
         #    self.m_log.GetLogger().debug(f'inst {inst_name} cell {cell_name}')
         ##
         if None == cell:
             cell                = netlist.Cell(cell_name, cell_type)
-            self.AddCell(cell_name, cell, cell_type)
+            self.GetNetlist().AddCell(cell_name, cell, cell_type)
             #self.m_log.GetLogger().debug(f'debug - 00 inst {inst_name} cell {cell_name}')
         ## debug
         #if True == print_debug:
@@ -630,13 +632,13 @@ class Parser(netlist.Netlist):
     def Run(self):
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) start ... {datetime.datetime.now()}')
         self.Read1st(self.GetFilename())
-        self.PrintInfo(self.m_log.GetLogger())
-        self.PrintNetlist(self.m_log.GetLogger())
-        self.PrintNetlist(self.m_log.GetLogger(), '1st.spc', self.GetWidth())
+        self.GetNetlist().PrintInfo(self.m_log.GetLogger())
+#        self.GetNetlist().PrintNetlist(self.m_log.GetLogger())
+#        self.GetNetlist().PrintNetlist(self.m_log.GetLogger(), '1st.spc', self.GetWidth())
         self.Read2nd(self.GetFilename())
-        self.PrintInfo(self.m_log.GetLogger())
-        self.PrintNetlist(self.m_log.GetLogger())
-        self.PrintNetlist(self.m_log.GetLogger(), '2nd.spc', self.GetWidth())
+        self.GetNetlist().PrintInfo(self.m_log.GetLogger())
+#        self.GetNetlist().PrintNetlist(self.m_log.GetLogger())
+#        self.GetNetlist().PrintNetlist(self.m_log.GetLogger(), '2nd.spc', self.GetWidth())
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) end ... {datetime.datetime.now()}')
 #
 def TestGetParameterStartPos():

@@ -3,6 +3,7 @@ import datetime
 import argparse
 import sys
 import os
+import inspect
 #
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import netlist
@@ -21,6 +22,7 @@ class Makeiprobe(netlist.Netlist):
         self.m_log                  = log
         #
         self.m_arg_parser           = argparse.ArgumentParser()
+        self.m_netlist              = None
     def SetLog(self, log):
         self.m_log  = log
     def GetLog(self):
@@ -49,6 +51,10 @@ class Makeiprobe(netlist.Netlist):
         self.m_all_probe    = all_probe
     def GetAllProbe(self):
         return self.m_all_probe
+    def SetNetlist(self, netlist):
+        self.m_netlist  = netlist
+    def GetNetlist(self):
+        return self.m_netlist
     def ReadArgs(self, args = None):
         self.GetLog().GetLogger().info(f'# read args start ... {datetime.datetime.now()}')
         #
@@ -80,8 +86,46 @@ class Makeiprobe(netlist.Netlist):
         self.GetLog().GetLogger().info(f'    top cell       : {self.GetTopCellname()}')
         self.GetLog().GetLogger().info(f'    all probe      : {self.GetAllProbe()}')
         self.GetLog().GetLogger().info(f'# print inputs end ... {datetime.datetime.now()}')
+    def RunParser(self):
+        my_parser   = parser.Parser(self.GetLog())
+        my_parser.SetFilename(self.GetFilename())
+        my_parser.Run()
+        self.SetNetlist(my_parser.GetNetlist())
+    def MakeIprobe(self):
+        self.GetLog().GetLogger().info(f'# make iprobe start ... {datetime.datetime.now()}')
+        top_cell    = self.GetNetlist().GetCell(self.GetTopCellname(), netlist.Type.CELL_CELL)
+        if None == top_cell:
+            self.m_log.GetLogger().info(f"# error : top cell({self.GetTopCellname()}) dont exist!")
+            self.m_log.GetLogger().info(f"# error : {self.MakeIprobe.__name__}:{inspect.currentframe().f_lineno})")
+            exit()
+        for netname in self.GetNetnames():
+            self.m_log.GetLogger().info(f'# make iprobe({netname}) start ... {datetime.datetime.now()}')
+            probe_filename  = f'{self.GetOutputPrefix()}.{netname}.probe'
+            self.m_log.GetLogger().info(f'    probe file : {probe_filename}')
+            probe_file      = open(probe_filename, 'wt')
+            self.MakeIprobeRecursive(top_cell, probe_file, netname, '', 0)
+            probe_file.close()
+            self.m_log.GetLogger().info(f'# make iprobe({netname}) end ... {datetime.datetime.now()}')
+        self.GetLog().GetLogger().info(f'# make iprobe end ... {datetime.datetime.now()}')
+    def MakeIprobeRecursive(self, parent_cell, probe_file, netname, parent_inst_name, level):
+        for inst_name in parent_cell.GetInstDic():
+            inst    = parent_cell.GetInstDic()[inst_name]
+            inst_name_1 = inst_name
+            if 0 < level:
+                inst_name_1     = f'{parent_inst_name}.{inst_name_1}'
+            self.GetLog().GetLogger().info(f'debug- lvl({level}) inst({inst_name_1})')
+            cell    = inst.GetCell()
+            if netlist.Type.CELL_CELL == cell.GetType():
+                self.MakeIprobeRecursive(cell, probe_file, netname, inst_name_1, level + 1)
+            else:
+                for pos in range(0, inst.GetNodeSize()):
+                    node    = inst.GetNode(pos)
+                    if netname.lower() == node.GetName().lower():
+                        probe_file.write(f'.probe i{pos + 1}({inst_name_1})\n')
     def Run(self, args = None):
         self.GetLog().GetLogger().info(f'# makeiprobe start ... {datetime.datetime.now()}')
         self.ReadArgs(args)
         self.PrintInputs()
+        self.RunParser()
+        self.MakeIprobe()
         self.GetLog().GetLogger().info(f'# makeiprobe end ... {datetime.datetime.now()}')

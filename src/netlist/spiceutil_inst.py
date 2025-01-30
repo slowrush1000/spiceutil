@@ -22,15 +22,17 @@ class Inst(Object, Parameters):
             return self.m_nodes[pos]
         else:
             return None
+    def GetNodeSize(self):
+        return len(self.GetNodes())
     def SetCell(self, cell):
         self.m_cell = cell
     def GetCell(self):
         return self.m_cell
     def GetNetlistStr(self):
-        print(f'debug- {self.GetName()} {self.GetCell().GetName()}')
+        #print(f'debug- {self.GetName()} {self.GetCell().GetName()}')
         for parameter_name_1 in self.m_equation_value_dic:
             equation_value_1    = self.m_equation_value_dic[parameter_name_1]
-            print(f'debug- {parameter_name_1} : {equation_value_1.GetEquation()}')
+            #print(f'debug- {parameter_name_1} : {equation_value_1.GetEquation()}')
         #
         netlist_str     = f'{self.GetName()}'
         for node in self.m_nodes:
