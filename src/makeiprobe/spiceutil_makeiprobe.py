@@ -102,26 +102,41 @@ class Makeiprobe(netlist.Netlist):
             self.m_log.GetLogger().info(f'# make iprobe({netname}) start ... {datetime.datetime.now()}')
             probe_filename  = f'{self.GetOutputPrefix()}.{netname}.probe'
             self.m_log.GetLogger().info(f'    probe file : {probe_filename}')
+            #
             probe_file      = open(probe_filename, 'wt')
+            probe_file.write(f'* {netlist.GetProgram()} - {netlist.GetVersion()}\n')
+            probe_file.write(f'* {datetime.datetime.now()}\n')
+            #
             self.MakeIprobeRecursive(top_cell, probe_file, netname, '', 0)
+            probe_file.write(f'*\n')
             probe_file.close()
             self.m_log.GetLogger().info(f'# make iprobe({netname}) end ... {datetime.datetime.now()}')
         self.GetLog().GetLogger().info(f'# make iprobe end ... {datetime.datetime.now()}')
     def MakeIprobeRecursive(self, parent_cell, probe_file, netname, parent_inst_name, level):
         for inst_name in parent_cell.GetInstDic():
             inst    = parent_cell.GetInstDic()[inst_name]
+            #
             inst_name_1 = inst_name
             if 0 < level:
                 inst_name_1     = f'{parent_inst_name}.{inst_name_1}'
-            self.GetLog().GetLogger().info(f'debug- lvl({level}) inst({inst_name_1})')
+            #self.GetLog().GetLogger().info(f'debug- lvl({level}) inst({inst_name_1})')
             cell    = inst.GetCell()
             if netlist.Type.CELL_CELL == cell.GetType():
                 self.MakeIprobeRecursive(cell, probe_file, netname, inst_name_1, level + 1)
             else:
-                for pos in range(0, inst.GetNodeSize()):
-                    node    = inst.GetNode(pos)
-                    if netname.lower() == node.GetName().lower():
-                        probe_file.write(f'.probe i{pos + 1}({inst_name_1})\n')
+                if True == self.GetAllProbe():
+                    for pos in range(0, inst.GetNodeSize()):
+                        node    = inst.GetNode(pos)
+                        if netname.lower() == node.GetName().lower():
+                            probe_file.write(f'.probe i{pos + 1}({inst_name_1})\n')
+                else:
+                    node_size   = inst.GetNodeSize()
+                    if (netlist.Type.CELL_MOSFET == cell.GetType()) or (netlist.Type.CELL_NMOS == cell.GetType()) or (netlist.Type.CELL_PMOS == cell.GetType()):
+                        node_size   -= 1
+                    for pos in range(0, node_size):
+                        node    = inst.GetNode(pos)
+                        if netname.lower() == node.GetName().lower():
+                            probe_file.write(f'.probe i{pos + 1}({inst_name_1})\n')
     def Run(self, args = None):
         self.GetLog().GetLogger().info(f'# makeiprobe start ... {datetime.datetime.now()}')
         self.ReadArgs(args)

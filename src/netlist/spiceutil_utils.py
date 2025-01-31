@@ -1,28 +1,6 @@
 #
 from enum import Enum
 #
-class Version:
-    def __init__(self):
-        self.m_program  = 'spiceutil'
-        self.m_version  = '20250119.0.0'
-#
-def k_TOP_CELLNAME():
-    return '___xxx_top_xxx___'
-def k_LINE_STEP():
-    return 1_000_000
-def GetDefaultRCell():
-    return 'r'
-def GetDefaultLCell():
-    return 'l'
-def GetDefaultCCell():
-    return 'c'
-def GetProgram():
-    my_version  = Version()
-    return my_version.m_program
-def GetVersion():
-    my_version  = Version()
-    return my_version.m_version
-#
 class Type(Enum):
     INIT            = 0
     #
@@ -45,13 +23,13 @@ class Type(Enum):
     CELL_NJF        = 24
     CELL_PJF        = 25
     #
-    CELL_DIODE_S    = 30
-    CELL_NMOS_S     = 31
-    CELL_PMOS_S     = 32
-    CELL_NPN_S      = 33
-    CELL_PNP_S      = 34
-    CELL_NJF_S      = 35
-    CELL_PJF_S      = 36
+    CELL_CELL_DIODE = 30
+    CELL_CELL_NMOS  = 31
+    CELL_CELL_PMOS  = 32
+    CELL_CELL_NPN   = 33
+    CELL_CELL_PNP   = 34
+    CELL_CELL_NJF   = 35
+    CELL_CELL_PJF   = 36
     #
     INST_R          = 50
     INST_L          = 51
@@ -62,6 +40,42 @@ class Type(Enum):
     INST_JFET       = 56
     INST_INST       = 57
 #
+class Run(Enum):
+    MAKEIPROBE      =   0
+#
+class Version:
+    def __init__(self):
+        self.m_program  = 'spiceutil'
+        self.m_version  = '20250119.0.0'
+#
+def k_TOP_CELLNAME():
+    return '___xxx_top_xxx___'
+def k_LINE_STEP():
+    return 1_000_000
+def GetDefaultRCell():
+    return 'r'
+def GetDefaultLCell():
+    return 'l'
+def GetDefaultCCell():
+    return 'c'
+def GetProgram():
+    my_version  = Version()
+    return my_version.m_program
+def GetVersion():
+    my_version  = Version()
+    return my_version.m_version
+def GetSubcktTypes():
+    return [ Type.CELL_CELL_DIODE, 
+            Type.CELL_CELL_NMOS, Type.CELL_CELL_PMOS,
+            Type.CELL_CELL_NPN, Type.CELL_CELL_PNP,
+            Type.CELL_CELL_NJF, Type.CELL_CELL_PJF 
+            ]
+def GetDeviceTypes():
+    return [ Type.CELL_DIODE, 
+            Type.CELL_NMOS, Type.CELL_PMOS,
+            Type.CELL_NPN, Type.CELL_PNP,
+            Type.CELL_NJF, Type.CELL_PJF 
+            ]
 def GetTypeName(type):
     match type:
         case Type.CELL_R:
@@ -86,6 +100,3 @@ def GetTypeName(type):
             return  'pjf'
         case _:
             return ''
-#
-class Run(Enum):
-    MAKEIPROBE      =   0

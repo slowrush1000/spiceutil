@@ -7,6 +7,8 @@ from .spiceutil_utils           import GetTypeName
 from .spiceutil_utils           import GetDefaultRCell
 from .spiceutil_utils           import GetDefaultLCell
 from .spiceutil_utils           import GetDefaultCCell
+from .spiceutil_utils           import GetDeviceTypes
+from .spiceutil_utils           import GetSubcktTypes
 from .spiceutil_utils           import GetProgram
 from .spiceutil_utils           import GetVersion
 from .spiceutil_parameters      import Parameters

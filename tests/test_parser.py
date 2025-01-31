@@ -13,8 +13,12 @@ def ParserTest001():
     my_log.GetLogger().setLevel(logging.DEBUG)
     #
     my_parser   = parser.Parser(my_log)
-    filename    = f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/data/001.spc'
-    my_parser.SetFilename(filename)
+    my_filename = f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/data/001.spc'
+    my_parser.SetFilename(my_filename)
     my_parser.Run()
+    #
+    my_netlist  = my_parser.GetNetlist()
+    my_output_filename  = '2nd.spc'
+    my_netlist.PrintNetlist(my_log.GetLogger(), my_output_filename)
 #
 ParserTest001()

@@ -16,11 +16,11 @@ class Parser:
         self.m_dollar_comment   = True
         self.m_width            = 80
         self.m_netlist          = netlist.Netlist()
+        self.m_log              = log
         self.m_default_top_cell = self.m_netlist.GetCell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
         if None == self.m_default_top_cell:
             self.m_default_top_cell     = netlist.Cell(netlist.k_TOP_CELLNAME(), netlist.Type.CELL_CELL)
             self.m_netlist.AddCell(netlist.k_TOP_CELLNAME(), self.m_default_top_cell, netlist.Type.CELL_CELL)
-        self.m_log              = log
     def SetFilename(self, filename):
         self.m_filename         = os.path.abspath(filename)
     def GetFilename(self):
@@ -537,24 +537,13 @@ class Parser:
         #self.m_log.GetLogger().debug(f'debug - inst {inst_name} cell {cell_name}')
         cell_type               = netlist.Type.CELL_CELL
         cell                    = self.GetNetlist().GetCell(cell_name, cell_type)
-        ## debug
-        #if True == print_debug:
-        #    self.m_log.GetLogger().debug(f'inst {inst_name} cell {cell_name}')
-        ##
         if None == cell:
+            cell_type           = netlist.Type.CELL_CELL
+            cell                = self.GetNetlist().GetCell(cell_name, )
             cell                = netlist.Cell(cell_name, cell_type)
             self.GetNetlist().AddCell(cell_name, cell, cell_type)
-            #self.m_log.GetLogger().debug(f'debug - 00 inst {inst_name} cell {cell_name}')
-        ## debug
-        #if True == print_debug:
-        #    self.m_log.GetLogger().debug(f'cell {cell.GetNetlistStr()}')
-        ##
         inst.SetCell(cell)
         cell.IncreaseInstSize()
-        ## debug
-        #if True == print_debug:
-        #    self.m_log.GetLogger().debug(f'inst {inst.GetNetlistStr()} {inst.GetCell().GetName()}')
-        ##
         for pos in range(1, parameter_start_pos - 1):
             node_name   = tokens[pos]
             node        = self.GetCurCell().GetNode(node_name)
@@ -629,14 +618,59 @@ class Parser:
                 equation            = equation.replace(' ', '').replace('\t', '').replace("'", "").replace('"', '')
                 inst.AddParameter(name, equation)
                 equation_end_pos    = name_pos
+    def GetSubcktType(self, type):
+        match type:
+            case netlist.Type.CELL_DIODE:
+                return netlist.Type.CELL_CELL_DIODE
+            case netlist.Type.CELL_NMOS:
+                return netlist.Type.CELL_CELL_NMOS
+            case netlist.Type.CELL_PMOS:
+                return netlist.Type.CELL_CELL_PMOS
+            case netlist.Type.CELL_NPN:
+                return netlist.Type.CELL_CELL_NPN
+            case netlist.Type.CELL_PNP:
+                return netlist.Type.CELL_CELL_PNP
+            case netlist.Type.CELL_NJF:
+                return netlist.Type.CELL_CELL_NJF
+            case netlist.Type.CELL_PJF:
+                return netlist.Type.CELL_CELL_PJF
+            case _:
+                return netlist.Type.INIT
+    def FindSubcktModel(self):
+        self.m_log.GetLogger().info(f'# find subckt model start ... {datetime.datetime.now()}')
+        #
+        insert_name_cell_types  = []
+        delete_cell_keys        = []
+        for key in self.GetNetlist().GetCellDic():
+            cell    = self.GetNetlist().GetCellByKey(key)
+            if netlist.Type.CELL_CELL == cell.GetType():
+                key     = self.GetNetlist().GetCellKey(cell.GetName(), netlist.Type.CELL_CELL)
+                for type_1 in netlist.GetSubcktTypes():
+                    cell_1      = self.GetNetlist().GetCell(cell.GetName(), type_1)
+                    if None != cell_1:
+                        subckt_type = self.GetSubcktType(type_1)
+                        subckt_cell = netlist.Cell(cell.GetName(), subckt_type)
+                        insert_name_cell_types.append([ cell.GetName(), subckt_cell, subckt_type ] )
+                        delete_cell_keys.append(key)
+                        break
+        #
+        for name_cell_type in insert_name_cell_types:
+            self.GetNetlist().AddCell(name_cell_type[0], name_cell_type[1], name_cell_type[2])
+        #
+        for delete_cell_key in delete_cell_keys:
+            self.m_log.GetLogger().debug(f'debug- {delete_cell_key}')
+            del self.GetNetlist().GetCellDic()[delete_cell_key]
+        self.m_log.GetLogger().info(f'# find subckt model end ... {datetime.datetime.now()}')
     def Run(self):
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) start ... {datetime.datetime.now()}')
         self.Read1st(self.GetFilename())
         self.GetNetlist().PrintInfo(self.m_log.GetLogger())
+        self.FindSubcktModel()
+        self.GetNetlist().PrintInfo(self.m_log.GetLogger())
 #        self.GetNetlist().PrintNetlist(self.m_log.GetLogger())
 #        self.GetNetlist().PrintNetlist(self.m_log.GetLogger(), '1st.spc', self.GetWidth())
-        self.Read2nd(self.GetFilename())
-        self.GetNetlist().PrintInfo(self.m_log.GetLogger())
+#        self.Read2nd(self.GetFilename())
+#        self.GetNetlist().PrintInfo(self.m_log.GetLogger())
 #        self.GetNetlist().PrintNetlist(self.m_log.GetLogger())
 #        self.GetNetlist().PrintNetlist(self.m_log.GetLogger(), '2nd.spc', self.GetWidth())
         self.m_log.GetLogger().info(f'# read file({self.m_filename}) end ... {datetime.datetime.now()}')

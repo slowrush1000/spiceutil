@@ -13,6 +13,7 @@ class Netlist(Parameters):
         self.m_cell_dic = {}
         self.m_top_cellname = k_TOP_CELLNAME
         self.m_top_cell = None
+        self.m_cell_key_delim   = '='
     def SetTopCellname(self, top_cellname):
         self.m_top_cellname = top_cellname
     def GetTopCellname(self):
@@ -21,6 +22,10 @@ class Netlist(Parameters):
         self.m_top_cell = top_cell
     def GetTopCell(self):
         return self.m_top_cell
+    def SetCellKeyDelim(self, cell_key_delim):
+        self.m_cell_key_delim = cell_key_delim
+    def GetCellKeyDelim(self):
+        return self.m_cell_key_delim
     def GetCellDic(self):
         return self.m_cell_dic
     def IsExistCell(self, name, type):
@@ -35,15 +40,20 @@ class Netlist(Parameters):
             return self.m_cell_dic[key]
         else:
             return None
+    def GetCellByKey(self, key):
+        if key in self.m_cell_dic:
+            return self.m_cell_dic[key]
+        else:
+            return None
     def AddCell(self, name, cell, type):
         key     = self.GetCellKey(name, type)
         if not key in self.m_cell_dic:
             self.m_cell_dic[key]   = cell
     def GetCellKey(self, name, type):
-        return f'{name}:::{type}'
+        return f'{name}{self.GetCellKeyDelim()}{type}'
     def GetInfoStr(self):
         info_str        = ''
-        info_str        += f'key(name:::type) #inst #node #pin #inst\n'
+        info_str        += f'key(name{self.GetCellKeyDelim()}type) #inst #node #pin #inst\n'
         for key in self.m_cell_dic:
             cell        = self.m_cell_dic[key]
             info_str    += f'{key} {len(cell.GetInstDic())} {len(cell.GetNodeDic())} {len(cell.GetPins())} {cell.GetInstSize()}\n'
