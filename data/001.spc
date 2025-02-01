@@ -45,19 +45,25 @@ mn out in vss vss n l=1u w=2u
 d1 in  vdd d
 .ends
 
-.subckt s_inv_normal in out $ comment
-xmp out in vdd vdd s_p l=1u w=4u
-xmn out in vss vss s_n l=1u w=2u
+.subckt inv_normal_binning in out $ comment
+mp out in vdd vdd pt l=1u w=4u
+mn out in vss vss nt l=1u w=2u
 d1 in  vdd d
 .ends
 
-.subckt s_sinv_normal_binning in out $ comment
-xmp out in vdd vdd s_p_binning l=1u w=4u
-xmn out in vss vss s_n_binning l=1u w=2u
+.subckt s_inv_normal in out $ comment
+xs_mp out in vdd vdd s_p l=1u w=4u
+xs_mn out in vss vss s_n l=1u w=2u
+d1 in  vdd d
+.ends
+
+.subckt s_inv_normal_binning in out $ comment
+xs_mp_binning out in vdd vdd s_p_binning l=1u w=4u
+xs_mn_binning out in vss vss s_n_binning l=1u w=2u
 d2 in  vdd d
 .ends
 
 xinv_normal in out inv_normal
 xinv_normal_binning in out inv_normal_binning
 xs_inv_normal in out s_inv_normal
-xs_inv_normal_binning in out s_sinv_normal_binning
+xs_inv_normal_binning in out s_inv_normal_binning

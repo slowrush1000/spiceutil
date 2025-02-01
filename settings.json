@@ -1,0 +1,20 @@
+{
+//    "[python]": {
+//        "editor.formatOnType": true,
+//        "editor.defaultFormatter": "ms-python.autopep8",
+//        "editor.formatOnSave": true,
+//        "autopep8.args": [
+//            "--max-line-length=79",
+//            "-ignore",
+//            "E402,E701",
+//            "--select=W503"
+//        ]
+//    }
+//    "[python]": {
+//        "editor.defaultFormatter": "ms-python.black-formatter",
+//        "editor.formatOnSave": true,
+//        "black-formatter.args": [
+//            "--line-length", "79"
+//        ]
+//    }
+//}
