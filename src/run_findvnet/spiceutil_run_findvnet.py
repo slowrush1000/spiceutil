@@ -114,7 +114,13 @@ class Findvnet(run.Run):
             probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
             probe_file.write(f"* {self.get_run()} - {datetime.datetime.now()}\n")
             #
-            self.find_vnet_recursive(top_cell, probe_file, netname, "", 0)
+            parent_pin_names = []
+            for pos in len(top_cell.get_pins()):
+                pin = top_cell.get_pin(pos)
+                parent_pin_names.append(pin.get_name())
+            self.find_vnet_recursive(
+                top_cell, probe_file, netname, "", parent_pin_names, 0
+            )
             probe_file.write(f"*\n")
             probe_file.close()
             self.m_log.get_logger().info(
@@ -126,24 +132,41 @@ class Findvnet(run.Run):
         )
 
     def find_vnet_recursive(
-        self, parent_cell, probe_file, netname, parent_inst_name, level
+        self,
+        parent_cell,
+        probe_file,
+        netname,
+        parent_inst_name,
+        parent_pin_names,
+        level,
     ):
-        for node_name in parent_cell.get_node_dic():
-            node = parent_cell.get_node_dic()[node_name]
-            if netname.lower() == node.get_name().lower():
-                node_name_1 = node.get_name()
-                if netlist.Type.NODE_PIN != node.get_type():
-                    node_name_1 = f"{parent_inst_name}.{node.get_name()}"
-                probe_file.write(f"{netname} {node_name_1}")
         for inst_name in parent_cell.get_inst_dic():
             inst = parent_cell.get_inst_dic()[inst_name]
+            #
+            inst_name_1 = inst.get_name()
+            if 0 < level:
+                inst_name_1 = f"{parent_inst_name}.{inst.get_name()}"
+            #
+            parent_pin_names_1 = []
+            for pos in len(inst.get_nodes()):
+                node = inst.get_node(pos)
+                if netlist.Type.NODE_PIN == node.get_type():
+                    parent_pin_names_1.append(parent_pin_names[pos])
+                else:
+                    node_name_1 = f"{node.get_name()}"
+                    if "" != parent_inst_name:
+                        node_name_1 = f"{parent_inst_name}.{node.get_name()}"
+                    parent_pin_names_1.append(node_name_1)
+            #
+            for pos in len(inst.get_nodes()):
+                node = inst.get_node(pos)
+                if netname.lower() == node.get_name().lower():
+                    probe_file.write(f"{netname} {parent_pin_names_1[pos]}\n")
+            #
             cell = inst.get_cell()
-            if netlist.Type.CELL_CELL == cell.get_type():
-                self.find_vnet_recursive(
-                    cell,
-                    probe_file,
-                    netname,
-                )
+            self.find_vnet_recursive(
+                cell, probe_file, netname, inst_name_1, parent_pin_names_1, level + 1
+            )
 
     def run(self, args=None):
         self.get_log().get_logger().info(

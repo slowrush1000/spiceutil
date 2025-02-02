@@ -2,8 +2,10 @@
 *.log
 *.spc
 *.probe
+__pycache__*
 src/*.*.sw*
 src/__pycache__*
 src/*/.*.sw*
 src/*/__pycache__*
-.VSCodeCounter/*
+.VSCodeCounter
+.VSCodeCounter
