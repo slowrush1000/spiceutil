@@ -8,43 +8,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import netlist
 import log
 import parser
+import run
 
 
-class Makeiprobe(netlist.Netlist):
+class Makeiprobe(run.Run):
     def __init__(self, log=None):
-        self.m_run = netlist.Run.MAKEIPROBE
-        self.m_output_prefix = ""
-        self.m_filename = ""
+        super().__init__(log)
         self.m_netnames = []
         self.m_top_cellname = netlist.k_TOP_CELLNAME
         self.m_all_probe = False
-        self.m_log = log
         self.m_arg_parser = argparse.ArgumentParser()
-        self.m_netlist = None
-
-    def set_log(self, log):
-        self.m_log = log
-
-    def get_log(self):
-        return self.m_log
-
-    def set_run(self, run):
-        self.m_run = run
-
-    def get_run(self):
-        return self.m_run
-
-    def set_output_prefix(self, output_prefix):
-        self.m_output_prefix = output_prefix
-
-    def get_output_prefix(self):
-        return self.m_output_prefix
-
-    def set_filename(self, filename):
-        self.m_filename = filename
-
-    def get_filename(self):
-        return self.m_filename
 
     def set_netnames(self, netnames):
         self.m_netnames = netnames
@@ -63,12 +36,6 @@ class Makeiprobe(netlist.Netlist):
 
     def get_all_probe(self):
         return self.m_all_probe
-
-    def set_netlist(self, netlist):
-        self.m_netlist = netlist
-
-    def get_netlist(self):
-        return self.m_netlist
 
     def read_args(self, args=None):
         self.get_log().get_logger().info(
@@ -95,6 +62,7 @@ class Makeiprobe(netlist.Netlist):
         #
         self.set_output_prefix(args_1.output_prefix)
         self.set_filename(args_1.filename)
+        self.set_run(netlist.Run.MAKEIPROBE)
         self.set_netnames(args_1.net)
         self.set_top_cellname(args_1.top_cell)
         self.set_all_probe(args_1.all_probe)
@@ -106,13 +74,17 @@ class Makeiprobe(netlist.Netlist):
         self.get_log().get_logger().info(
             f"# print inputs start ... {datetime.datetime.now()}"
         )
-        self.get_log().get_logger().info(f"run            : {self.get_run()}")
-        self.get_log().get_logger().info(f"output_prefix  : {self.get_output_prefix()}")
-        self.get_log().get_logger().info(f"file           : {self.get_filename()}")
+        self.get_log().get_logger().info(
+            f"output_prefix    : {self.get_output_prefix()}"
+        )
+        self.get_log().get_logger().info(f"file             : {self.get_filename()}")
+        self.get_log().get_logger().info(f"run              : {self.get_run()}")
         for netname in self.get_netnames():
-            self.get_log().get_logger().info(f"net            : {netname}")
-        self.get_log().get_logger().info(f"top cell       : {self.get_top_cellname()}")
-        self.get_log().get_logger().info(f"all probe      : {self.get_all_probe()}")
+            self.get_log().get_logger().info(f"net              : {netname}")
+        self.get_log().get_logger().info(
+            f"top cell         : {self.get_top_cellname()}"
+        )
+        self.get_log().get_logger().info(f"all probe        : {self.get_all_probe()}")
         self.get_log().get_logger().info(
             f"# print inputs end ... {datetime.datetime.now()}"
         )
@@ -145,7 +117,7 @@ class Makeiprobe(netlist.Netlist):
                 datetime.datetime.now()}"
             )
             probe_filename = f"{self.get_output_prefix()}.{netname}.probe"
-            self.m_log.get_logger().info(f"    probe file : {probe_filename}")
+            self.m_log.get_logger().info(f"probe file   : {probe_filename}")
             #
             probe_file = open(probe_filename, "wt")
             probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
@@ -191,8 +163,9 @@ class Makeiprobe(netlist.Netlist):
             #
             else:
                 node_size = inst.get_node_size()
-                if cell.get_type() in k_subckt_type_nmos_pmos_mosfet_set:
-                    node_size -= 1
+                if False == self.get_all_probe():
+                    if cell.get_type() in k_subckt_type_nmos_pmos_mosfet_set:
+                        node_size -= 1
                 #
                 for pos in range(0, node_size):
                     node = inst.get_node(pos)

@@ -3,7 +3,8 @@ import sys
 import datetime
 import logging
 import log
-import makeiprobe
+import run_makeiprobe
+import run_findvnet
 import netlist
 import parser
 
@@ -29,12 +30,10 @@ class Spiceutil:
         print(f"{netlist.get_program()} {netlist.get_version()}")
         print(f"spiceutil.py usage:")
         print(
-            f"spiceutil.py output_prefix makeiprobe filename [-net NET [NET ...]] [-top_cell TOP_CELL] [-all_probe] [-debug]"
+            f"spiceutil.py output_prefix filename makeiprobe [-net NET [NET ...]] [-top_cell TOP_CELL] [-all_probe] [-debug]"
         )
-        print(f"spiceutil.py output_prefix flatten filename [-top_cell TOP_CELL]")
-        print(f"spiceutil.py output_prefix findvnet filename [-net NET [NET ...]]")
         print(
-            f"spiceutil.py output_prefix findcellcap filename [-power_net POWER_NET] [-ground_net GROUND_NET]"
+            f"spiceutil.py output_prefix filename findvnet [-net NET [NET ...]] [-top_cell TOP_CELL]"
         )
 
     def init_log(self, output_prefix):
@@ -55,9 +54,11 @@ class Spiceutil:
         #
         # self.get_log().get_logger().info(f"debug- {args[2]}")
         if "makeiprobe" == args[2].lower():
-            # self.get_log().get_logger().info(f"debug- makeiprbe")
-            my_makeiprobe = makeiprobe.Makeiprobe(self.get_log())
+            my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_log())
             my_makeiprobe.run(args[1:])
+        elif "findvnet" == args[2].lower():
+            my_findvnet = run_findvnet.Findvnet(self.get_log())
+            my_findvnet.run(args[1:])
         #
         self.get_log().get_logger().info(
             f"# spiceutil.py end ... {datetime.datetime.now()}"

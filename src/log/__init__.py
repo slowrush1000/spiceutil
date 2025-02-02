@@ -1,2 +1,2 @@
-__all__ = ['echo']
-from .spiceutil_log import Log
+__all__ = ["echo"]
+from .spiceutil_log import *

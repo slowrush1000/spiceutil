@@ -43,7 +43,10 @@ class Type(Enum):
 
 
 class Run(Enum):
-    MAKEIPROBE = 0
+    INIT = 0
+    MAKEIPROBE = 1
+    FINDVNET = 2
+    FINDDECAP = 3
 
 
 class Version:
@@ -59,26 +62,6 @@ k_DEFAULT_L_CELL = "l"
 k_DEFAULT_C_CELL = "c"
 
 
-# def k_TOP_CELLNAME():
-#    return "___xxx_top_xxx___"
-#
-#
-# def k_LINE_STEP():
-#    return 1_000_000
-#
-#
-# def get_default_r_cell():
-#    return "r"
-#
-#
-# def get_default_l_cell():
-#    return "l"
-#
-#
-# def get_default_c_cell():
-#    return "c"
-
-
 def get_program():
     my_version = Version()
     return my_version.m_program
@@ -87,18 +70,6 @@ def get_program():
 def get_version():
     my_version = Version()
     return my_version.m_version
-
-
-# def get_subckt_types():
-#    return [
-#        Type.CELL_CELL_DIODE,
-#        Type.CELL_CELL_NMOS,
-#        Type.CELL_CELL_PMOS,
-#        Type.CELL_CELL_NPN,
-#        Type.CELL_CELL_PNP,
-#        Type.CELL_CELL_NJF,
-#        Type.CELL_CELL_PJF,
-#    ]
 
 
 k_SUBCKT_TYPES = [

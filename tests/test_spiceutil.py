@@ -4,7 +4,7 @@ import logging
 
 sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src")
 import log
-import makeiprobe
+import run_makeiprobe
 import parser
 from spiceutil import Spiceutil
 

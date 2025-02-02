@@ -5,7 +5,7 @@ import logging
 
 sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src")
 import log
-import makeiprobe
+import run_makeiprobe
 import parser
 from spiceutil import Spiceutil
 
@@ -15,7 +15,7 @@ def test_makeiprobe_001():
     filename = (
         f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/data/001.spc"
     )
-    args = f"spiceutil.py {output_prefix} makeiprobe {filename} -net vdd vss vddq vssq"
+    args = f"spiceutil.py {output_prefix} makeiprobe {filename} -net vdd vss vddq vssq -all_probe"
     my_spiceutil = Spiceutil()
     my_spiceutil.run(args.split())
 
