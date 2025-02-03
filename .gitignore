@@ -1,11 +1,12 @@
 .*.sw*
 *.log
-*.spc
 *.probe
+*.txt
+1st.spc
+2nd.spc
 __pycache__*
+.VSCodeCounter
 src/*.*.sw*
 src/__pycache__*
 src/*/.*.sw*
 src/*/__pycache__*
-.VSCodeCounter
-.VSCodeCounter

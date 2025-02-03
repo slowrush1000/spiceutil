@@ -15,7 +15,7 @@ def test_makeiprobe_001():
     filename = (
         f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/data/001.spc"
     )
-    args = f"spiceutil.py {output_prefix} makeiprobe {filename} -net vdd vss vddq vssq -all_probe"
+    args = f"spiceutil.py {output_prefix} {filename} makeiprobe -net vdd vss vddq vssq -all_probe"
     my_spiceutil = Spiceutil()
     my_spiceutil.run(args.split())
 

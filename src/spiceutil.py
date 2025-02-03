@@ -53,10 +53,11 @@ class Spiceutil:
         )
         #
         # self.get_log().get_logger().info(f"debug- {args[2]}")
-        if "makeiprobe" == args[2].lower():
+        if "makeiprobe" == args[3].lower():
             my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_log())
             my_makeiprobe.run(args[1:])
-        elif "findvnet" == args[2].lower():
+        elif "findvnet" == args[3].lower():
+            print(f"ddd")
             my_findvnet = run_findvnet.Findvnet(self.get_log())
             my_findvnet.run(args[1:])
         #

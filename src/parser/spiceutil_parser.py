@@ -131,7 +131,7 @@ class Parser:
         if ".subckt" == tokens[0].lower():
             self.ReadTotalLine1stSubcktLine(tokens)
         elif ".end" == tokens[0].lower():
-            self.ReadTotalLine1stEndsLine(tokens)
+            self.read_total_line_1st_ends_line(tokens)
         elif ".model" == tokens[0].lower():
             self.ReadTotalLine1stModelLine(tokens)
         elif (".inc" == tokens[0].lower()) or (".include" == tokens[0].lower()):
@@ -145,7 +145,7 @@ class Parser:
             self.set_cur_cellname(name)
             self.get_netlist().add_cell(name, cell, type)
 
-    def ReadTotalLine1stEndsLine(self):
+    def read_total_line_1st_ends_line(self):
         self.set_cur_cellname(netlist.k_TOP_CELLNAME)
         self.set_cur_cell(self.get_default_top_cell())
 
@@ -233,9 +233,11 @@ class Parser:
         if ".subckt" == tokens[0].lower():
             self.read_total_line_2nd_subckt_line(tokens)
         elif ".ends" == tokens[0].lower():
-            self.ReadTotalLine1stEndsLine()
+            self.read_total_line_1st_ends_line()
         elif ".model" == tokens[0].lower():
             pass
+        elif ".global" == tokens[0].lower():
+            self.read_total_line_2nd_global_line(tokens)
         elif ".inc" == tokens[0] or ".include" == tokens[0]:
             self.read_total_line_2dn_include_line(tokens, filename)
         elif "r" == tokens[0][0]:
@@ -293,6 +295,12 @@ class Parser:
         # pins    = cell.GetPins()
         # for pin in pins:
         #    self.get_log().get_logger().debug(f'{pin.get_name()}')
+
+    # .global netnames...
+    def read_total_line_2nd_global_line(self, tokens):
+        for token in tokens[1:]:
+            self.get_netlist().add_global_netname(token)
+        self.get_netlist().make_global_netnames_set()
 
     def read_total_line_2dn_include_line(self, tokens, filename):
         t_filename = tokens[1].replace('"', "").replace("'", "")

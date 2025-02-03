@@ -17,6 +17,7 @@ class Makeiprobe(run.Run):
         self.m_netnames = []
         self.m_top_cellname = netlist.k_TOP_CELLNAME
         self.m_all_probe = False
+        self.m_dollar_comment = True
         self.m_arg_parser = argparse.ArgumentParser()
 
     def set_netnames(self, netnames):
@@ -37,6 +38,12 @@ class Makeiprobe(run.Run):
     def get_all_probe(self):
         return self.m_all_probe
 
+    def set_dollar_comment(self, dollar_comment):
+        self.m_dollar_comment = dollar_comment
+
+    def get_dollar_comment(self):
+        return self.m_dollar_comment
+
     def read_args(self, args=None):
         self.get_log().get_logger().info(
             f"# read args start ... {datetime.datetime.now()}"
@@ -48,6 +55,9 @@ class Makeiprobe(run.Run):
         self.m_arg_parser.add_argument("-net", action="extend", nargs="+", type=str)
         self.m_arg_parser.add_argument("-top_cell", default=netlist.k_TOP_CELLNAME)
         self.m_arg_parser.add_argument("-all_probe", action="store_true", default=False)
+        self.m_arg_parser.add_argument(
+            "-disable_dollar_comment", action="store_false", default=True
+        )
         #
         args_1 = None
         if None != self.get_log():
@@ -66,6 +76,7 @@ class Makeiprobe(run.Run):
         self.set_netnames(args_1.net)
         self.set_top_cellname(args_1.top_cell)
         self.set_all_probe(args_1.all_probe)
+        self.set_dollar_comment(args_1.disable_dollar_comment)
         self.get_log().get_logger().info(
             f"# read args end ... {datetime.datetime.now()}"
         )
@@ -86,12 +97,16 @@ class Makeiprobe(run.Run):
         )
         self.get_log().get_logger().info(f"all probe        : {self.get_all_probe()}")
         self.get_log().get_logger().info(
+            f"dollar comment   : {self.get_dollar_comment()}"
+        )
+        self.get_log().get_logger().info(
             f"# print inputs end ... {datetime.datetime.now()}"
         )
 
     def run_parser(self):
         my_parser = parser.Parser(self.get_log())
         my_parser.set_filename(self.get_filename())
+        my_parser.set_dollar_comment(self.get_dollar_comment())
         my_parser.run()
         self.set_netlist(my_parser.get_netlist())
 

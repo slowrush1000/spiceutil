@@ -36,8 +36,8 @@ class Findvnet(run.Run):
         )
         #
         self.m_arg_parser.add_argument("output_prefix")
-        self.m_arg_parser.add_argument("run")
         self.m_arg_parser.add_argument("filename")
+        self.m_arg_parser.add_argument("run")
         self.m_arg_parser.add_argument("-net", action="extend", nargs="+", type=str)
         self.m_arg_parser.add_argument("-top_cell", default=netlist.k_TOP_CELLNAME)
         #
@@ -54,7 +54,7 @@ class Findvnet(run.Run):
         #
         self.set_output_prefix(args_1.output_prefix)
         self.set_filename(args_1.filename)
-        self.set_run(netlist.Run.FINDDECAP)
+        self.set_run(netlist.Run.FINDVNET)
         self.set_netnames(args_1.net)
         self.set_top_cellname(args_1.top_cell)
         self.get_log().get_logger().info(
@@ -103,30 +103,26 @@ class Findvnet(run.Run):
             exit()
         #
         for netname in self.get_netnames():
+            #
+            net_result_str = []
+            #
             self.m_log.get_logger().info(
-                f"# find vnet({netname}) start ... {
+                f"find vnet({netname}) start ... {
                 datetime.datetime.now()}"
             )
-            probe_filename = f"{self.get_output_prefix()}.{netname}.findvnet.txt"
-            self.m_log.get_logger().info(f"vnet file    : {probe_filename}")
-            #
-            probe_file = open(probe_filename, "wt")
-            probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
-            probe_file.write(f"* {self.get_run()} - {datetime.datetime.now()}\n")
-            #
             parent_pin_names = []
-            for pos in len(top_cell.get_pins()):
+            for pos in range(0, len(top_cell.get_pins())):
                 pin = top_cell.get_pin(pos)
                 parent_pin_names.append(pin.get_name())
             self.find_vnet_recursive(
-                top_cell, probe_file, netname, "", parent_pin_names, 0
+                top_cell, net_result_str, netname, "", parent_pin_names, 0
             )
-            probe_file.write(f"*\n")
-            probe_file.close()
+            self.write_findvnet_file(netname, net_result_str)
             self.m_log.get_logger().info(
-                f"# find vnet({netname}) end ... {
-                datetime.datetime.now()}"
+                f"find vnet({netname}) end ... {
+               datetime.datetime.now()}"
             )
+        #
         self.get_log().get_logger().info(
             f"# find vnet end ... {datetime.datetime.now()}"
         )
@@ -134,7 +130,7 @@ class Findvnet(run.Run):
     def find_vnet_recursive(
         self,
         parent_cell,
-        probe_file,
+        net_result_str,
         netname,
         parent_inst_name,
         parent_pin_names,
@@ -148,25 +144,49 @@ class Findvnet(run.Run):
                 inst_name_1 = f"{parent_inst_name}.{inst.get_name()}"
             #
             parent_pin_names_1 = []
-            for pos in len(inst.get_nodes()):
+            for pos in range(0, len(inst.get_nodes())):
                 node = inst.get_node(pos)
                 if netlist.Type.NODE_PIN == node.get_type():
                     parent_pin_names_1.append(parent_pin_names[pos])
                 else:
                     node_name_1 = f"{node.get_name()}"
-                    if "" != parent_inst_name:
-                        node_name_1 = f"{parent_inst_name}.{node.get_name()}"
-                    parent_pin_names_1.append(node_name_1)
+                    # check global netname
+                    if node_name_1 in self.get_netlist().get_global_netnames_set():
+                        parent_pin_names_1.append(node_name_1)
+                    else:
+                        if "" != parent_inst_name:
+                            node_name_1 = f"{parent_inst_name}.{node.get_name()}"
+                        parent_pin_names_1.append(node_name_1)
             #
-            for pos in len(inst.get_nodes()):
+            for pos in range(0, len(inst.get_nodes())):
                 node = inst.get_node(pos)
                 if netname.lower() == node.get_name().lower():
-                    probe_file.write(f"{netname} {parent_pin_names_1[pos]}\n")
+                    # probe_file.write(f"{netname} {parent_pin_names_1[pos]}\n")
+                    net_result_str.append(f"{netname} {parent_pin_names_1[pos]}")
             #
             cell = inst.get_cell()
             self.find_vnet_recursive(
-                cell, probe_file, netname, inst_name_1, parent_pin_names_1, level + 1
+                cell,
+                net_result_str,
+                netname,
+                inst_name_1,
+                parent_pin_names_1,
+                level + 1,
             )
+
+    def write_findvnet_file(self, netname, net_result_str):
+        net_result_str_set = set(net_result_str)
+        net_result_str_1 = list(net_result_str_set)
+        probe_filename = f"{self.get_output_prefix()}.{netname}.findvnet.txt"
+        self.m_log.get_logger().info(f"vnet file : {probe_filename}")
+        probe_file = open(probe_filename, "wt")
+        probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
+        probe_file.write(f"* {self.get_run()} - {datetime.datetime.now()}\n")
+        probe_file.write(f"* net : {netname}\n")
+        for net_result in net_result_str_1:
+            probe_file.write(f"{net_result}\n")
+        probe_file.write(f"*\n")
+        probe_file.close()
 
     def run(self, args=None):
         self.get_log().get_logger().info(

@@ -14,6 +14,8 @@ class Netlist(Parameters):
         self.m_top_cellname = k_TOP_CELLNAME
         self.m_top_cell = None
         self.m_cell_key_delim = "="
+        self.m_global_nodenames = []
+        self.m_global_nodenames_set = None
 
     def set_top_cellname(self, top_cellname):
         self.m_top_cellname = top_cellname
@@ -64,14 +66,33 @@ class Netlist(Parameters):
     def get_cell_key(self, name, type):
         return f"{name}{self.get_cell_key_delim()}{type}"
 
+    def add_global_netname(self, global_netname):
+        self.m_global_nodenames.append(global_netname)
+
+    def get_global_netnames(self):
+        return self.m_global_nodenames
+
+    def make_global_netnames_set(self):
+        self.m_global_nodenames_set = set(self.m_global_nodenames)
+
+    def get_global_netnames_set(self):
+        return self.m_global_nodenames_set
+
     def get_info_str(self):
         info_str = ""
+        #
         info_str += f"key(name{self.get_cell_key_delim()
                                }type) #inst #node #pin #inst\n"
         for key in self.m_cell_dic:
             cell = self.m_cell_dic[key]
             info_str += f"{key} {len(cell.get_inst_dic())} {len(cell.get_node_dic())} {
                 len(cell.get_pins())} {cell.get_inst_size()}\n"
+        #
+        if None != self.m_global_nodenames_set:
+            info_str += f"global_netname\n"
+            for global_netname in self.m_global_nodenames_set:
+                info_str += f".global {global_netname}\n"
+        #
         return info_str
 
     def get_inst_info_str(self):
