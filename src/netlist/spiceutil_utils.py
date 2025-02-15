@@ -142,3 +142,7 @@ def get_trace_info_str():
 
 def get_error_str(msg):
     return f"{msg}({get_trace_info_str()})"
+
+
+def get_netname(hier_netname):
+    return hier_netname.split(".")[-1]

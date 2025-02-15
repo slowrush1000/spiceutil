@@ -46,7 +46,7 @@ class Spiceutil:
             self.print_usage()
             exit()
         self.init_log(args[1])
-        print(f"args: {args}")
+        # print(f"args: {args}")
         #
         self.get_log().get_logger().info(
             f"# spiceutil.py start ... {datetime.datetime.now()}"
@@ -57,7 +57,6 @@ class Spiceutil:
             my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_log())
             my_makeiprobe.run(args[1:])
         elif "findvnet" == args[3].lower():
-            print(f"ddd")
             my_findvnet = run_findvnet.Findvnet(self.get_log())
             my_findvnet.run(args[1:])
         #

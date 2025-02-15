@@ -91,7 +91,7 @@ class Netlist(Parameters):
         if None != self.m_global_nodenames_set:
             info_str += f"global_netname\n"
             for global_netname in self.m_global_nodenames_set:
-                info_str += f".global {global_netname}\n"
+                info_str += f"{global_netname}\n"
         #
         return info_str
 

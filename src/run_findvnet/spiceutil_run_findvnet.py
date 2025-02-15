@@ -38,8 +38,12 @@ class Findvnet(run.Run):
         self.m_arg_parser.add_argument("output_prefix")
         self.m_arg_parser.add_argument("filename")
         self.m_arg_parser.add_argument("run")
-        self.m_arg_parser.add_argument("-net", action="extend", nargs="+", type=str)
-        self.m_arg_parser.add_argument("-top_cell", default=netlist.k_TOP_CELLNAME)
+        self.m_arg_parser.add_argument(
+            "-net", action="extend", nargs="+", type=str
+        )
+        self.m_arg_parser.add_argument(
+            "-top_cell", default=netlist.k_TOP_CELLNAME
+        )
         #
         args_1 = None
         if None != self.get_log():
@@ -68,8 +72,12 @@ class Findvnet(run.Run):
         self.get_log().get_logger().info(
             f"output_prefix    : {self.get_output_prefix()}"
         )
-        self.get_log().get_logger().info(f"file             : {self.get_filename()}")
-        self.get_log().get_logger().info(f"run              : {self.get_run()}")
+        self.get_log().get_logger().info(
+            f"file             : {self.get_filename()}"
+        )
+        self.get_log().get_logger().info(
+            f"run              : {self.get_run()}"
+        )
         for netname in self.get_netnames():
             self.get_log().get_logger().info(f"net              : {netname}")
         self.get_log().get_logger().info(
@@ -93,10 +101,10 @@ class Findvnet(run.Run):
             self.get_top_cellname(), netlist.Type.CELL_CELL
         )
         if None == top_cell:
-            self.m_log.get_logger().info(
+            self.get_log().get_logger().info(
                 f"# error : top cell({self.get_top_cellname()}) dont exist!"
             )
-            self.m_log.get_logger().info(
+            self.get_log().get_logger().info(
                 f"# error : {self.make_iprobe.__name__}:{
                 inspect.currentframe().f_lineno})"
             )
@@ -106,7 +114,7 @@ class Findvnet(run.Run):
             #
             net_result_str = []
             #
-            self.m_log.get_logger().info(
+            self.get_log().get_logger().info(
                 f"find vnet({netname}) start ... {
                 datetime.datetime.now()}"
             )
@@ -118,7 +126,7 @@ class Findvnet(run.Run):
                 top_cell, net_result_str, netname, "", parent_pin_names, 0
             )
             self.write_findvnet_file(netname, net_result_str)
-            self.m_log.get_logger().info(
+            self.get_log().get_logger().info(
                 f"find vnet({netname}) end ... {
                datetime.datetime.now()}"
             )
@@ -143,26 +151,37 @@ class Findvnet(run.Run):
             if 0 < level:
                 inst_name_1 = f"{parent_inst_name}.{inst.get_name()}"
             #
-            parent_pin_names_1 = []
+            parent_pin_names_1 = ["*"] * len(inst.get_nodes())
             for pos in range(0, len(inst.get_nodes())):
                 node = inst.get_node(pos)
                 if netlist.Type.NODE_PIN == node.get_type():
-                    parent_pin_names_1.append(parent_pin_names[pos])
+                    parent_pin_names_1[pos] = parent_pin_names[pos]
                 else:
                     node_name_1 = f"{node.get_name()}"
-                    # check global netname
-                    if node_name_1 in self.get_netlist().get_global_netnames_set():
-                        parent_pin_names_1.append(node_name_1)
+                    # global netname
+                    if (
+                        node_name_1
+                        in self.get_netlist().get_global_netnames_set()
+                    ):
+                        parent_pin_names_1[pos] = node_name_1
+                    # local netname
                     else:
-                        if "" != parent_inst_name:
-                            node_name_1 = f"{parent_inst_name}.{node.get_name()}"
-                        parent_pin_names_1.append(node_name_1)
+                        if 0 < level:
+                            node_name_1 = (
+                                f"{parent_inst_name}.{node.get_name()}"
+                            )
+                        parent_pin_names_1[pos] = node_name_1
             #
             for pos in range(0, len(inst.get_nodes())):
                 node = inst.get_node(pos)
-                if netname.lower() == node.get_name().lower():
-                    # probe_file.write(f"{netname} {parent_pin_names_1[pos]}\n")
-                    net_result_str.append(f"{netname} {parent_pin_names_1[pos]}")
+                netname_1 = netlist.get_netname(parent_pin_names_1[pos])
+                if netname.lower() == netname_1.lower():
+                    net_result_str.append(
+                        f"{netname} {parent_pin_names_1[pos]}"
+                    )
+                    self.get_log().get_logger().info(
+                        f"#debug- {pos} {parent_inst_name}.{inst.get_name()} {node.get_name()} {parent_pin_names_1[pos]}"
+                    )
             #
             cell = inst.get_cell()
             self.find_vnet_recursive(
@@ -178,9 +197,11 @@ class Findvnet(run.Run):
         net_result_str_set = set(net_result_str)
         net_result_str_1 = list(net_result_str_set)
         probe_filename = f"{self.get_output_prefix()}.{netname}.findvnet.txt"
-        self.m_log.get_logger().info(f"vnet file : {probe_filename}")
+        self.get_log().get_logger().info(f"vnet file : {probe_filename}")
         probe_file = open(probe_filename, "wt")
-        probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
+        probe_file.write(
+            f"* {netlist.get_program()} - {netlist.get_version()}\n"
+        )
         probe_file.write(f"* {self.get_run()} - {datetime.datetime.now()}\n")
         probe_file.write(f"* net : {netname}\n")
         for net_result in net_result_str_1:
