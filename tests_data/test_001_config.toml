@@ -1,0 +1,17 @@
+#################################################################
+# findvnet
+#################################################################
+#run            = "config" "parser" "findvnet"
+run             = "config"
+spice_file      = "data/001.spc"
+netnames        = "vdd vss vddq vssq"
+#top_cell        = "top_cell"
+#
+all_probe       = false
+#
+casesensitive   = false
+dollar_comment  = false
+is_write_1st_spc    = true
+is_write_2nd_spc    = true
+log_verbose     = "DEBUG"
+text_width      = 120

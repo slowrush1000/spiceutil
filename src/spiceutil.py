@@ -67,8 +67,9 @@ class Spiceutil:
 
     def read_config_file(self):
         self.get_input().get_log().get_logger().info(
-            f"# read config file start ... {datetime.datetime.now()}"
+            f"# read config file({self.get_input().get_config_filename()}) start ... {datetime.datetime.now()}"
         )
+        #
         with open(self.get_input().get_config_filename(), "rb") as config_file:
             config = tomllib.load(config_file)
             #
@@ -98,9 +99,10 @@ class Spiceutil:
                 self.get_input().set_log_verbose(config["log_verbose"])
                 self.get_input().get_log().set_level(config["log_verbose"])
             if "text_width" in config:
-                set.get_input().set_text_width(int(config["text_width"]))
+                self.get_input().set_text_width(int(config["text_width"]))
+        #
         self.get_input().get_log().get_logger().info(
-            f"# read config file end ... {datetime.datetime.now()}\n"
+            f"# read config file({self.get_input().get_config_filename()}) end ... {datetime.datetime.now()}\n"
         )
 
     def run(self, args):
@@ -118,11 +120,19 @@ class Spiceutil:
         self.read_config_file()
         self.print_input()
         #
-        if "findvnet" == self.get_input().get_run():
-            my_findvnet = run_findvnet.Findvnet(
-                self.get_input(), self.get_input().get_log().get_logger()
-            )
-            my_findvnet.run()
+        match self.get_input().get_run():
+            case "config":
+                pass
+            case "parser":
+                my_parser = parser.Parser()
+                my_parser.set_input(self.get_input())
+                my_parser.set_log(self.get_input().get_log())
+                my_parser.run()
+            case "findvnet":
+                my_findvnet = run_findvnet.Findvnet(
+                    self.get_input(), self.get_input().get_log().get_logger()
+                )
+                my_findvnet.run()
         #
         self.get_input().get_log().get_logger().info(
             f"# {version.Version().get_program()} {version.Version().get_version()} end ... {datetime.datetime.now()}\n"

@@ -1,6 +1,6 @@
-# test_findvnet_001
+# test_003_findvnet
 run                 = "findvnet"
-spice_file          = "tests_data/001.spc"
+spice_file          = "tests_data/002.spc"
 #top_cell           = "top_cell"
 netnames            = "vdd vss vddq vssq"
 #
@@ -8,4 +8,5 @@ casesensitive       = false
 dollar_comment      = false
 is_write_1st_spc    = true
 is_write_2nd_spc    = true
-#log_verbose         = "DEBUG"
+#log_verbose       = "NOTSET" "DEBUG" "INFO" "WARNING" "ERROR" "CRITICAL"
+log_verbose         = "DEBUG"

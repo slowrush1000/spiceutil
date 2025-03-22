@@ -155,7 +155,6 @@ class Netlist(Parameters):
     def write_netlist(self, logger=None, filename=None, width=120):
         if None == logger:
             if None == filename:
-                print("#debug-1")
                 print(f"# write netlist start ... {datetime.datetime.now()}")
                 for netlist_line in self.get_netlist_str():
                     wrap_netlist_lines = textwrap.wrap(
@@ -167,9 +166,8 @@ class Netlist(Parameters):
                     )
                     for wrap_netlist_line in wrap_netlist_lines:
                         print(f"{wrap_netlist_line}")
-                print(f"# write netlist end ... {datetime.datetime.now()}")
+                print(f"# write netlist end ... {datetime.datetime.now()}\n")
             else:
-                print("#debug-2")
                 print(f"# write netlist start ... {datetime.datetime.now()}")
                 print(f"netlist file : {filename}")
                 f = open(filename, "wt")
@@ -184,10 +182,9 @@ class Netlist(Parameters):
                     for wrap_netlist_line in wrap_netlist_lines:
                         f.write(f"{wrap_netlist_line}\n")
                 f.close()
-                print(f"# write netlist end ... {datetime.datetime.now()}")
+                print(f"# write netlist end ... {datetime.datetime.now()}\n")
         else:
             if None == filename:
-                logger.info("#debug-2")
                 logger.info(
                     f"# write netlist start ... {datetime.datetime.now()}"
                 )
@@ -202,10 +199,9 @@ class Netlist(Parameters):
                     for wrap_netlist_line in wrap_netlist_lines:
                         logger.info(f"{wrap_netlist_line}")
                 logger.info(
-                    f"# write netlist end ... {datetime.datetime.now()}"
+                    f"# write netlist end ... {datetime.datetime.now()}\n"
                 )
             else:
-                logger.info("#debug-3")
                 logger.info(
                     f"# write netlist start ... {datetime.datetime.now()}"
                 )
@@ -223,5 +219,5 @@ class Netlist(Parameters):
                         f.write(f"{wrap_netlist_line}\n")
                 f.close()
                 logger.info(
-                    f"# write netlist end ... {datetime.datetime.now()}"
+                    f"# write netlist end ... {datetime.datetime.now()}\n"
                 )
