@@ -9,6 +9,7 @@ class Inst(Object, Parameters):
         self.m_name = name
         self.m_type = type
         self.m_nodes = []
+        self.m_ls = []
         self.m_cell = None
 
     def add_node(self, node):
@@ -25,6 +26,18 @@ class Inst(Object, Parameters):
 
     def get_node_size(self):
         return len(self.get_nodes())
+
+    def add_l(self, l):
+        self.m_ls.append(l)
+
+    def get_ls(self):
+        return self.m_ls
+
+    def get_l(self, pos):
+        if pos < len(self.m_ls):
+            return self.m_ls[pos]
+        else:
+            return None
 
     def set_cell(self, cell):
         self.m_cell = cell
@@ -46,7 +59,9 @@ class Inst(Object, Parameters):
             Type.INST_R == self.set_type()
         ):
             if k_DEFAULT_R_CELL in self.m_equation_value_dic:
-                equation_value = self.m_equation_value_dic[get_default_r_cell()]
+                equation_value = self.m_equation_value_dic[
+                    get_default_r_cell()
+                ]
                 netlist_str += f" {equation_value.get_equation()}"
         elif (k_DEFAULT_L_CELL == self.get_cell().get_name()) and (
             Type.INST_L == self.set_type()
@@ -58,7 +73,9 @@ class Inst(Object, Parameters):
             Type.INST_C == self.set_type()
         ):
             if k_DEFAULT_C_CELL in self.m_equation_value_dic:
-                equation_value = self.m_equation_value_dic[get_default_c_cell()]
+                equation_value = self.m_equation_value_dic[
+                    get_default_c_cell()
+                ]
                 netlist_str += f" {equation_value.get_equation()}"
         else:
             netlist_str += f" {self.get_cell().get_name()}"
@@ -71,6 +88,8 @@ class Inst(Object, Parameters):
             ):
                 continue
             equation_value = self.m_equation_value_dic[parameter_name]
-            netlist_str += f" {parameter_name} = '{equation_value.get_equation()}'"
+            netlist_str += (
+                f" {parameter_name} = '{equation_value.get_equation()}'"
+            )
         return netlist_str
         #

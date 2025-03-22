@@ -4,20 +4,21 @@ import datetime
 import inspect
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import netlist
+import input
 import log
+import netlist
 
 
 class Parser:
     def __init__(self, log=None):
-        self.m_filename = ""
         self.m_cur_cellname = netlist.k_TOP_CELLNAME
         self.m_cur_cell = None
-        self.m_casesensitive = False
-        self.m_dollar_comment = True
-        self.m_width = 80
+        #
+        self.m_input = None
+        #
         self.m_netlist = netlist.Netlist()
         self.m_log = log
+        #
         self.m_default_top_cell = self.m_netlist.get_cell(
             netlist.k_TOP_CELLNAME, netlist.Type.CELL_CELL
         )
@@ -31,11 +32,11 @@ class Parser:
                 netlist.Type.CELL_CELL,
             )
 
-    def set_filename(self, filename):
-        self.m_filename = os.path.abspath(filename)
+    def set_cur_cellname(self, cellname):
+        self.m_cur_cellname = cellname
 
-    def get_filename(self):
-        return self.m_filename
+    def get_cur_cellname(self):
+        return self.m_cur_cellname
 
     def set_cur_cell(self, cell):
         self.m_cur_cell = cell
@@ -43,32 +44,17 @@ class Parser:
     def get_cur_cell(self):
         return self.m_cur_cell
 
-    def set_cur_cellname(self, cellname):
-        self.m_cur_cellname = cellname
+    def set_input(self, input):
+        self.m_input = input
 
-    def get_cur_cellname(self):
-        return self.m_cur_cellname
+    def get_input(self):
+        return self.m_input
 
-    def get_default_top_cell(self):
-        return self.m_default_top_cell
+    def set_netlist(self, netlist):
+        self.m_netlist = netlist
 
-    def set_casesensitive(self, casesensitive):
-        self.m_casesensitive = casesensitive
-
-    def get_casesensitive(self):
-        return self.m_casesensitive
-
-    def set_dollar_comment(self, dollar_comment):
-        self.m_dollar_comment = dollar_comment
-
-    def get_dollar_comment(self):
-        return self.m_dollar_comment
-
-    def set_width(self, width):
-        self.m_width = width
-
-    def get_width(self):
-        return self.m_width
+    def get_netlist(self):
+        return self.m_netlist
 
     def set_log(self, log):
         self.m_log = log
@@ -76,11 +62,8 @@ class Parser:
     def get_log(self):
         return self.m_log
 
-    def set_netlist(self, netlist):
-        self.m_netlist = netlist
-
-    def get_netlist(self):
-        return self.m_netlist
+    def get_default_top_cell(self):
+        return self.m_default_top_cell
 
     def read_1st(self, filename):
         self.get_log().get_logger().info(
@@ -101,43 +84,46 @@ class Parser:
                              datetime.datetime.now()}"
                     )
                 #
-                if False == self.get_casesensitive():
+                if False == self.get_input().get_casesensitive():
                     line = line.lower()
                 line = line.lstrip().rstrip()
-                line = self.remove_comments(line, self.get_dollar_comment())
+                line = self.remove_comments(
+                    line, self.get_input().get_dollar_comment()
+                )
                 if 0 == len(line):
                     continue
                 #
                 if "+" == line[0]:
                     total_line = total_line + line[1:]
                 else:
-                    self.ReadTotalLine1st(total_line, filename)
+                    self.read_total_line_1st(total_line, filename)
                     total_line = line
-        self.ReadTotalLine1st(total_line, filename)
+        self.read_total_line_1st(total_line, filename)
         self.get_log().get_logger().info(
             f"    {nlines} lines ... {
             datetime.datetime.now()}"
         )
         self.get_log().get_logger().info(
-            f"# read file({filename}) 1st end ... {
-            datetime.datetime.now()}"
+            f"# read file({filename}) 1st end ... {datetime.datetime.now()}\n"
         )
 
-    def ReadTotalLine1st(self, total_line, filename):
+    def read_total_line_1st(self, total_line, filename):
         t_total_line = total_line.replace("=", " = ")
         tokens = t_total_line.split()
         if 0 == len(tokens):
             return
         if ".subckt" == tokens[0].lower():
-            self.ReadTotalLine1stSubcktLine(tokens)
+            self.read_total_line_1st_subckt_line(tokens)
         elif ".end" == tokens[0].lower():
             self.read_total_line_1st_ends_line(tokens)
         elif ".model" == tokens[0].lower():
-            self.ReadTotalLine1stModelLine(tokens)
-        elif (".inc" == tokens[0].lower()) or (".include" == tokens[0].lower()):
-            self.ReadTotalLine1stIncludeLine(tokens, filename)
+            self.read_total_line_1st_model_line(tokens)
+        elif (".inc" == tokens[0].lower()) or (
+            ".include" == tokens[0].lower()
+        ):
+            self.read_total_line_1st_include_line(tokens, filename)
 
-    def ReadTotalLine1stSubcktLine(self, tokens):
+    def read_total_line_1st_subckt_line(self, tokens):
         name = tokens[1]
         type = netlist.Type.CELL_CELL
         if False == self.get_netlist().is_exist_cell(name, type):
@@ -149,7 +135,7 @@ class Parser:
         self.set_cur_cellname(netlist.k_TOP_CELLNAME)
         self.set_cur_cell(self.get_default_top_cell())
 
-    def ReadTotalLine1stModelLine(self, tokens):
+    def read_total_line_1st_model_line(self, tokens):
         name = tokens[1].split(".")[0]
         type_name = tokens[2]
         type = netlist.Type.INIT
@@ -172,7 +158,7 @@ class Parser:
             cell = netlist.Cell(name, type)
             self.get_netlist().add_cell(name, cell, type)
 
-    def ReadTotalLine1stIncludeLine(self, tokens, filename):
+    def read_total_line_1st_include_line(self, tokens, filename):
         t_filename = tokens[1].replace('"', "").replace("'", "")
         # 절대경로
         if "/" == t_filename[0]:
@@ -203,10 +189,12 @@ class Parser:
                         datetime.datetime.now()}"
                     )
                 #
-                if False == self.get_casesensitive():
+                if False == self.get_input().get_casesensitive():
                     line = line.lower()
                 line = line.lstrip().rstrip()
-                line = self.remove_comments(line, self.get_dollar_comment())
+                line = self.remove_comments(
+                    line, self.get_input().get_dollar_comment()
+                )
                 if 0 == len(line):
                     continue
                 #
@@ -221,8 +209,7 @@ class Parser:
             datetime.datetime.now()}"
         )
         self.get_log().get_logger().info(
-            f"# read file({filename}) 2nd end ... {
-            datetime.datetime.now()}"
+            f"# read file({filename}) 2nd end ... {datetime.datetime.now()}\n"
         )
 
     def read_total_line_2nd(self, total_line, filename):
@@ -273,10 +260,8 @@ class Parser:
         self.set_cur_cell(cell)
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
-        # self.get_log().get_logger().info(f'parameter_start_pos : {cell_name} - {parameter_start_pos}')
         if -1 == parameter_start_pos:
             parameter_start_pos = len(tokens)
-        #
         for pos in range(2, parameter_start_pos):
             # self.get_log().get_logger().debug(f'{cell_name} - {tokens[pos]}')
             pin_name = tokens[pos]
@@ -286,15 +271,14 @@ class Parser:
                 cell.add_pin(pin_name, pin)
             else:
                 msg = f"# error : cell({cell_name}) pin({pin_name}) is duplicate!"
-                self.get_log().get_logger().error(f"{netlist.get_error_str(msg)}")
+                self.get_log().get_logger().error(
+                    f"{netlist.get_error_str(msg)}"
+                )
                 exit()
         #
         cell.make_pin_set()
         #
         self.read_parameter_cell(cell, tokens, parameter_start_pos)
-        # pins    = cell.GetPins()
-        # for pin in pins:
-        #    self.get_log().get_logger().debug(f'{pin.get_name()}')
 
     # .global netnames...
     def read_total_line_2nd_global_line(self, tokens):
@@ -603,13 +587,9 @@ class Parser:
 
     def read_total_line_2nd_inst_line(self, tokens):
         inst_name = tokens[0]
-        # debug
-        # print_debug     = False
-        # if 'xc' == inst_name:
-        #    print_debug     = True
-        ##
-        inst = self.get_cur_cell().get_inst(inst_name)
-        # self.get_log().get_logger().debug(f'debug - {inst_name} - {self.GetCurCell().get_name()}')
+        cur_cell = self.get_cur_cell()
+        inst = cur_cell.get_inst(inst_name)
+        # inst = self.get_cur_cell().get_inst(inst_name)
         if None == inst:
             inst = netlist.Inst(inst_name, netlist.Type.INST_INST)
             self.get_cur_cell().add_inst(inst_name, inst)
@@ -700,7 +680,9 @@ class Parser:
                 equation_start_pos = pos + 1
                 # self.get_log().get_logger().debug(f'debug : pos : {pos} name_pos : {name_pos} equation_start_pos : {equation_start_pos} equation_end_pos : {equation_end_pos}')
                 name = tokens[name_pos]
-                equation = " ".join(tokens[equation_start_pos:equation_end_pos])
+                equation = " ".join(
+                    tokens[equation_start_pos:equation_end_pos]
+                )
                 equation = (
                     equation.replace(" ", "")
                     .replace("\t", "")
@@ -719,7 +701,9 @@ class Parser:
                 name_pos = pos - 1
                 equation_start_pos = pos + 1
                 name = tokens[name_pos]
-                equation = " ".join(tokens[equation_start_pos:equation_end_pos])
+                equation = " ".join(
+                    tokens[equation_start_pos:equation_end_pos]
+                )
                 equation = (
                     equation.replace(" ", "")
                     .replace("\t", "")
@@ -750,8 +734,7 @@ class Parser:
 
     def find_subckt_model(self):
         self.get_log().get_logger().info(
-            f"# find subckt model start ... {
-            datetime.datetime.now()}"
+            f"# find subckt model start ... {datetime.datetime.now()}"
         )
         #
         insert_name_cell_types = []
@@ -767,7 +750,9 @@ class Parser:
                         cell.get_name(), type_1
                     ):
                         subckt_type = self.get_subckt_type(type_1)
-                        insert_name_cell_types.append([cell.get_name(), subckt_type])
+                        insert_name_cell_types.append(
+                            [cell.get_name(), subckt_type]
+                        )
                         delete_cell_keys.append(key_0)
                         break
         #
@@ -780,33 +765,47 @@ class Parser:
         #
         for delete_cell_key in delete_cell_keys:
             del self.get_netlist().get_cell_dic()[delete_cell_key]
-            self.get_log().get_logger().info(f"cell({delete_cell_key}) is deleted")
+            self.get_log().get_logger().info(
+                f"cell({delete_cell_key}) is deleted"
+            )
         self.get_log().get_logger().info(
-            f"# find subckt model end ... {
-            datetime.datetime.now()}"
+            f"# find subckt model end ... { datetime.datetime.now()}\n"
         )
 
     def run(self):
         self.get_log().get_logger().info(
-            f"# read file({self.m_filename}) start ... {
-            datetime.datetime.now()}"
+            f"# read file({self.get_input().get_spice_filename()}) start ... {datetime.datetime.now()}\n"
         )
-        self.read_1st(self.get_filename())
-        self.get_netlist().print_info(self.get_log().get_logger())
+        #
+        self.read_1st(self.get_input().get_spice_filename())
+        # self.get_netlist().print_info(self.get_log().get_logger())
         self.find_subckt_model()
-        self.get_netlist().print_info(self.get_log().get_logger())
-        self.get_netlist().print_netlist(
-            self.get_log().get_logger(), "1st.spc", self.get_width()
-        )
-        self.read_2nd(self.get_filename())
+        # self.get_netlist().print_info(self.get_log().get_logger())
+        if True == self.get_input().get_is_write_1st_spc():
+            spc_1st_filename = (
+                f"{self.get_input().get_output_prefix()}.1st.spc"
+            )
+            self.get_netlist().write_netlist(
+                self.get_log().get_logger(),
+                spc_1st_filename,
+                self.get_input().get_text_width(),
+            )
+        #
+        self.read_2nd(self.get_input().get_spice_filename())
         self.get_netlist().print_info(self.get_log().get_logger())
         self.get_netlist().print_inst_info(self.get_log().get_logger())
-        self.get_netlist().print_netlist(
-            self.get_log().get_logger(), "2nd.spc", self.get_width()
-        )
+        if True == self.get_input().get_is_write_2nd_spc():
+            spc_2nd_filename = (
+                f"{self.get_input().get_output_prefix()}.2nd.spc"
+            )
+            self.get_netlist().write_netlist(
+                self.get_log().get_logger(),
+                spc_2nd_filename,
+                self.get_input().get_text_width(),
+            )
+        #
         self.get_log().get_logger().info(
-            f"# read file({self.m_filename}) end ... {
-            datetime.datetime.now()}"
+            f"# read file({self.get_input().get_spice_filename()}) end ... {datetime.datetime.now()}\n"
         )
 
 

@@ -3,8 +3,6 @@ import textwrap
 from .spiceutil_parameters import Parameters
 from .spiceutil_utils import k_TOP_CELLNAME
 from .spiceutil_utils import Type
-from .spiceutil_utils import get_program
-from .spiceutil_utils import get_version
 
 
 class Netlist(Parameters):
@@ -79,24 +77,32 @@ class Netlist(Parameters):
         return self.m_global_nodenames_set
 
     def get_info_str(self):
-        info_str = ""
+        info_str = f"--------------------------------------------------------"
         #
-        info_str += f"key(name{self.get_cell_key_delim()
-                               }type) #inst #node #pin #inst\n"
+        info_str += f"\nkey(name{self.get_cell_key_delim()
+                               }type) #inst #node #pin #inst"
+        info_str += (
+            f"\n--------------------------------------------------------"
+        )
+        #
         for key in self.m_cell_dic:
             cell = self.m_cell_dic[key]
-            info_str += f"{key} {len(cell.get_inst_dic())} {len(cell.get_node_dic())} {
-                len(cell.get_pins())} {cell.get_inst_size()}\n"
+            info_str += f"\n{key} {len(cell.get_inst_dic())} {len(cell.get_node_dic())} {
+                len(cell.get_pins())} {cell.get_inst_size()}"
         #
         if None != self.m_global_nodenames_set:
-            info_str += f"global_netname\n"
+            info_str += f"\nglobal_netname"
             for global_netname in self.m_global_nodenames_set:
-                info_str += f"{global_netname}\n"
+                info_str += f" {global_netname}"
         #
         return info_str
 
     def get_inst_info_str(self):
-        info_str = f"inst_name cell_name cell_type\n"
+        info_str = f"--------------------------------------------------------"
+        info_str += f"\ninst_name cell_name cell_type"
+        info_str += (
+            f"\n--------------------------------------------------------"
+        )
         for key in self.m_cell_dic:
             cell = self.m_cell_dic[key]
             info_str += f"{cell.get_inst_info_str()}"
@@ -104,23 +110,31 @@ class Netlist(Parameters):
 
     def print_info(self, logger=None):
         if None == logger:
-            print(f"# print info start ... {datetime.datetime.now()}")
+            print(f"# print cell info start ... {datetime.datetime.now()}")
             print(f"{self.get_info_str()}")
-            print(f"# print info end ... {datetime.datetime.now()}")
+            print(f"# print cell info end ... {datetime.datetime.now()}\n")
         else:
-            logger.info(f"# print info start ... {datetime.datetime.now()}")
+            logger.info(
+                f"# print cell info start ... {datetime.datetime.now()}"
+            )
             logger.info(f"{self.get_info_str()}")
-            logger.info(f"# print info end ... {datetime.datetime.now()}")
+            logger.info(
+                f"# print cell info end ... {datetime.datetime.now()}\n"
+            )
 
     def print_inst_info(self, logger=None):
         if None == logger:
             print(f"# print inst info start ... {datetime.datetime.now()}")
             print(f"{self.get_inst_info_str()}")
-            print(f"# print inst info end ... {datetime.datetime.now()}")
+            print(f"# print inst info end ... {datetime.datetime.now()}\n")
         else:
-            logger.info(f"# print inst info start ... {datetime.datetime.now()}")
+            logger.info(
+                f"# print inst info start ... {datetime.datetime.now()}"
+            )
             logger.info(f"{self.get_inst_info_str()}")
-            logger.info(f"# print inst info end ... {datetime.datetime.now()}")
+            logger.info(
+                f"# print inst info end ... {datetime.datetime.now()}\n"
+            )
 
     def get_netlist_str(self):
         netlist_str = []
@@ -138,62 +152,76 @@ class Netlist(Parameters):
         #
         return netlist_str
 
-    def print_netlist(self, logger=None, filename=None, width=120):
-        if (None == logger) and (None == filename):
-            print(f"# print netlist start ... {datetime.datetime.now()}")
-            for netlist_line in self.get_netlist_str():
-                wrap_netlist_lines = textwrap.wrap(
-                    netlist_line,
-                    width=width,
-                    subsequent_indent="+ ",
-                    break_long_words=False,
-                    break_on_hyphens=False,
+    def write_netlist(self, logger=None, filename=None, width=120):
+        if None == logger:
+            if None == filename:
+                print("#debug-1")
+                print(f"# write netlist start ... {datetime.datetime.now()}")
+                for netlist_line in self.get_netlist_str():
+                    wrap_netlist_lines = textwrap.wrap(
+                        netlist_line,
+                        width=width,
+                        subsequent_indent="+ ",
+                        break_long_words=False,
+                        break_on_hyphens=False,
+                    )
+                    for wrap_netlist_line in wrap_netlist_lines:
+                        print(f"{wrap_netlist_line}")
+                print(f"# write netlist end ... {datetime.datetime.now()}")
+            else:
+                print("#debug-2")
+                print(f"# write netlist start ... {datetime.datetime.now()}")
+                print(f"netlist file : {filename}")
+                f = open(filename, "wt")
+                for netlist_line in self.get_netlist_str():
+                    wrap_netlist_lines = textwrap.wrap(
+                        netlist_line,
+                        width=width,
+                        subsequent_indent="+ ",
+                        break_long_words=False,
+                        break_on_hyphens=False,
+                    )
+                    for wrap_netlist_line in wrap_netlist_lines:
+                        f.write(f"{wrap_netlist_line}\n")
+                f.close()
+                print(f"# write netlist end ... {datetime.datetime.now()}")
+        else:
+            if None == filename:
+                logger.info("#debug-2")
+                logger.info(
+                    f"# write netlist start ... {datetime.datetime.now()}"
                 )
-                for wrap_netlist_line in wrap_netlist_lines:
-                    print(f"{wrap_netlist_line}")
-            print(f"# print netlist end ... {datetime.datetime.now()}")
-        elif (None == logger) and (None != filename):
-            print(f"# print netlist start ... {datetime.datetime.now()}")
-            print(f"netlist file : {filename}")
-            f = open(filename, "wt")
-            for netlist_line in self.get_netlist_str():
-                wrap_netlist_lines = textwrap.wrap(
-                    netlist_line,
-                    width=width,
-                    subsequent_indent="+ ",
-                    break_long_words=False,
-                    break_on_hyphens=False,
+                for netlist_line in self.get_netlist_str():
+                    wrap_netlist_lines = textwrap.wrap(
+                        netlist_line,
+                        width=width,
+                        subsequent_indent="+ ",
+                        break_long_words=False,
+                        break_on_hyphens=False,
+                    )
+                    for wrap_netlist_line in wrap_netlist_lines:
+                        logger.info(f"{wrap_netlist_line}")
+                logger.info(
+                    f"# write netlist end ... {datetime.datetime.now()}"
                 )
-                for wrap_netlist_line in wrap_netlist_lines:
-                    f.write(f"{wrap_netlist_line}\n")
-            f.close()
-            print(f"# print netlist end ... {datetime.datetime.now()}")
-        elif (None != logger) and (None == filename):
-            logger.info(f"# print netlist start ... {datetime.datetime.now()}")
-            for netlist_line in self.get_netlist_str():
-                wrap_netlist_lines = textwrap.wrap(
-                    netlist_line,
-                    width=width,
-                    subsequent_indent="+ ",
-                    break_long_words=False,
-                    break_on_hyphens=False,
+            else:
+                logger.info("#debug-3")
+                logger.info(
+                    f"# write netlist start ... {datetime.datetime.now()}"
                 )
-                for wrap_netlist_line in wrap_netlist_lines:
-                    logger.info(f"{wrap_netlist_line}")
-            logger.info(f"# print netlist end ... {datetime.datetime.now()}")
-        elif (None != logger) and (None != filename):
-            logger.info(f"# print netlist start ... {datetime.datetime.now()}")
-            logger.info(f"netlist file : {filename}")
-            f = open(filename, "wt")
-            for netlist_line in self.get_netlist_str():
-                wrap_netlist_lines = textwrap.wrap(
-                    netlist_line,
-                    width=width,
-                    subsequent_indent="+ ",
-                    break_long_words=False,
-                    break_on_hyphens=False,
+                logger.info(f"netlist file : {filename}")
+                f = open(filename, "wt")
+                for netlist_line in self.get_netlist_str():
+                    wrap_netlist_lines = textwrap.wrap(
+                        netlist_line,
+                        width=width,
+                        subsequent_indent="+ ",
+                        break_long_words=False,
+                        break_on_hyphens=False,
+                    )
+                    for wrap_netlist_line in wrap_netlist_lines:
+                        f.write(f"{wrap_netlist_line}\n")
+                f.close()
+                logger.info(
+                    f"# write netlist end ... {datetime.datetime.now()}"
                 )
-                for wrap_netlist_line in wrap_netlist_lines:
-                    f.write(f"{wrap_netlist_line}\n")
-            f.close()
-            logger.info(f"# print netlist end ... {datetime.datetime.now()}")

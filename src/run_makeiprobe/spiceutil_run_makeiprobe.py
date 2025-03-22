@@ -8,10 +8,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import netlist
 import log
 import parser
-import run
 
 
-class Makeiprobe(run.Run):
+class Makeiprobe:
     def __init__(self, log=None):
         super().__init__(log)
         self.m_netnames = []
@@ -52,9 +51,15 @@ class Makeiprobe(run.Run):
         self.m_arg_parser.add_argument("output_prefix")
         self.m_arg_parser.add_argument("run")
         self.m_arg_parser.add_argument("filename")
-        self.m_arg_parser.add_argument("-net", action="extend", nargs="+", type=str)
-        self.m_arg_parser.add_argument("-top_cell", default=netlist.k_TOP_CELLNAME)
-        self.m_arg_parser.add_argument("-all_probe", action="store_true", default=False)
+        self.m_arg_parser.add_argument(
+            "-net", action="extend", nargs="+", type=str
+        )
+        self.m_arg_parser.add_argument(
+            "-top_cell", default=netlist.k_TOP_CELLNAME
+        )
+        self.m_arg_parser.add_argument(
+            "-all_probe", action="store_true", default=False
+        )
         self.m_arg_parser.add_argument(
             "-disable_dollar_comment", action="store_false", default=True
         )
@@ -88,14 +93,20 @@ class Makeiprobe(run.Run):
         self.get_log().get_logger().info(
             f"output_prefix    : {self.get_output_prefix()}"
         )
-        self.get_log().get_logger().info(f"file             : {self.get_filename()}")
-        self.get_log().get_logger().info(f"run              : {self.get_run()}")
+        self.get_log().get_logger().info(
+            f"file             : {self.get_filename()}"
+        )
+        self.get_log().get_logger().info(
+            f"run              : {self.get_run()}"
+        )
         for netname in self.get_netnames():
             self.get_log().get_logger().info(f"net              : {netname}")
         self.get_log().get_logger().info(
             f"top cell         : {self.get_top_cellname()}"
         )
-        self.get_log().get_logger().info(f"all probe        : {self.get_all_probe()}")
+        self.get_log().get_logger().info(
+            f"all probe        : {self.get_all_probe()}"
+        )
         self.get_log().get_logger().info(
             f"dollar comment   : {self.get_dollar_comment()}"
         )
@@ -135,8 +146,12 @@ class Makeiprobe(run.Run):
             self.m_log.get_logger().info(f"probe file   : {probe_filename}")
             #
             probe_file = open(probe_filename, "wt")
-            probe_file.write(f"* {netlist.get_program()} - {netlist.get_version()}\n")
-            probe_file.write(f"* {self.get_run()} - {datetime.datetime.now()}\n")
+            probe_file.write(
+                f"* {netlist.get_program()} - {netlist.get_version()}\n"
+            )
+            probe_file.write(
+                f"* {self.get_run()} - {datetime.datetime.now()}\n"
+            )
             #
             self.make_iprobe_recursive(top_cell, probe_file, netname, "", 0)
             probe_file.write(f"*\n")
@@ -160,7 +175,9 @@ class Makeiprobe(run.Run):
             netlist.Type.CELL_PMOS,
             netlist.Type.CELL_MOSFET,
         ]
-        k_subckt_type_nmos_pmos_mosfet_set = set(k_subckt_type_nmos_pmos_mosfet)
+        k_subckt_type_nmos_pmos_mosfet_set = set(
+            k_subckt_type_nmos_pmos_mosfet
+        )
         #
         for inst_name in parent_cell.get_inst_dic():
             inst = parent_cell.get_inst_dic()[inst_name]
@@ -191,13 +208,17 @@ class Makeiprobe(run.Run):
                                 probe_file, pos, inst_name_1, cell
                             )
                         else:
-                            self.write_iprobe_normal_model(probe_file, pos, inst_name_1)
+                            self.write_iprobe_normal_model(
+                                probe_file, pos, inst_name_1
+                            )
 
     def write_iprobe_normal_model(self, probe_file, pos, inst_name):
         probe_file.write(f".probe i{pos + 1}({inst_name})\n")
 
     def write_iprobe_subckt_model(self, probe_file, pos, inst_name, cell):
-        probe_file.write(f".probe x({inst_name}.{cell.get_pins()[pos].get_name()})\n")
+        probe_file.write(
+            f".probe x({inst_name}.{cell.get_pins()[pos].get_name()})\n"
+        )
 
     def run(self, args=None):
         self.get_log().get_logger().info(

@@ -1,58 +1,66 @@
-from enum import Enum
+from enum import Enum, auto
 import inspect
 
 
 class Type(Enum):
-    INIT = 0
+    INIT = auto()
     #
-    NODE_PIN = 1
-    NODE_NODE = 2
+    NODE_PIN = auto()
+    NODE_NODE = auto()
     #
-    CELL_R = 10
-    CELL_L = 11
-    CELL_C = 12
-    CELL_DIODE = 14
-    CELL_MOSFET = 15
-    CELL_BJT = 16
-    CELL_JFET = 17
-    CELL_CELL = 18
+    CELL_R = auto()
+    CELL_L = auto()
+    CELL_C = auto()
+    CELL_K = auto()
+    CELL_DIODE = auto()
+    CELL_MOSFET = auto()
+    CELL_BJT = auto()
+    CELL_JFET = auto()
+    CELL_VS = auto()
+    CELL_CS = auto()
+    CELL_VCVS = auto()
+    CELL_CCVS = auto()
+    CELL_VCCS = auto()
+    CELL_CCCS = auto()
+    CELL_CELL = auto()
     #
-    CELL_NMOS = 20
-    CELL_PMOS = 21
-    CELL_NPN = 22
-    CELL_PNP = 23
-    CELL_NJF = 24
-    CELL_PJF = 25
+    CELL_NMOS = auto()
+    CELL_PMOS = auto()
+    CELL_NPN = auto()
+    CELL_PNP = auto()
+    CELL_NJF = auto()
+    CELL_PJF = auto()
     #
-    CELL_CELL_DIODE = 30
-    CELL_CELL_NMOS = 31
-    CELL_CELL_PMOS = 32
-    CELL_CELL_NPN = 33
-    CELL_CELL_PNP = 34
-    CELL_CELL_NJF = 35
-    CELL_CELL_PJF = 36
+    CELL_CELL_DIODE = auto()
+    CELL_CELL_NMOS = auto()
+    CELL_CELL_PMOS = auto()
+    CELL_CELL_NPN = auto()
+    CELL_CELL_PNP = auto()
+    CELL_CELL_NJF = auto()
+    CELL_CELL_PJF = auto()
     #
-    INST_R = 50
-    INST_L = 51
-    INST_C = 52
-    INST_DIODE = 53
-    INST_MOSFET = 54
-    INST_BJT = 55
-    INST_JFET = 56
-    INST_INST = 57
+    INST_R = auto()
+    INST_L = auto()
+    INST_C = auto()
+    INST_K = auto()
+    INST_DIODE = auto()
+    INST_MOSFET = auto()
+    INST_BJT = auto()
+    INST_JFET = auto()
+    INST_VS = auto()
+    INST_CS = auto()
+    INST_VCVS = auto()
+    INST_CCVS = auto()
+    INST_VCCS = auto()
+    INST_CCCS = auto()
+    INST_INST = auto()
 
 
 class Run(Enum):
-    INIT = 0
-    MAKEIPROBE = 1
-    FINDVNET = 2
-    FINDDECAP = 3
-
-
-class Version:
-    def __init__(self):
-        self.m_program = "spiceutil"
-        self.m_version = "20250119.0.0"
+    INIT = auto()
+    MAKEIPROBE = auto()
+    FINDVNET = auto()
+    FINDDECAP = auto()
 
 
 k_TOP_CELLNAME = "___xxx_top_xxx__"
@@ -60,16 +68,6 @@ k_LINE_STEP = 1_000_000
 k_DEFAULT_R_CELL = "r"
 k_DEFAULT_L_CELL = "l"
 k_DEFAULT_C_CELL = "c"
-
-
-def get_program():
-    my_version = Version()
-    return my_version.m_program
-
-
-def get_version():
-    my_version = Version()
-    return my_version.m_version
 
 
 k_SUBCKT_TYPES = [
@@ -114,6 +112,8 @@ def get_type_name(type):
             return "l"
         case Type.CELL_C:
             return "c"
+        case Type.CELL_K:
+            return "k"
         case Type.CELL_DIODE:
             return "d"
         case Type.CELL_NMOS:
@@ -128,6 +128,18 @@ def get_type_name(type):
             return "njf"
         case Type.CELL_PJF:
             return "pjf"
+        case Type.CELL_VS:
+            return "vs"
+        case Type.CELL_CS:
+            return "cs"
+        case Type.CELL_VCVS:
+            return "vcvs"
+        case Type.CELL_CCVS:
+            return "ccvs"
+        case Type.CELL_VCCS:
+            return "vccs"
+        case Type.CELL_CCCS:
+            return "cccs"
         case _:
             return ""
 

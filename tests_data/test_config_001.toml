@@ -1,0 +1,22 @@
+#################################################################
+# findvnet
+#################################################################
+run             = "findvnet"
+spice_file      = "data/001.spc"
+#top_cell        = "top_cell"
+netnames        = "vdd vss vddq vssq"
+casesensitive   = false
+dollar_comment  = false
+#################################################################
+
+##################################################################
+## makeiprobe
+##################################################################
+#run             = "makeiprobe"
+#spice_file      = "data/001.spc"
+#top_cell        = "top_cell"
+#netnames        = "vdd vss vddq vssq"
+#all_probe       = false
+#casesensitive   = false
+#dollar_comment  = false
+text_width       = 120

@@ -123,9 +123,9 @@ class Cell(Object, Parameters):
         return netlist_str
 
     def get_inst_info_str(self):
-        info_str = f"{self.get_name()} #pin : {len(self.get_pins())}\n"
+        info_str = f"\n{self.get_name()} #pin : {len(self.get_pins())}"
         for inst_name in self.get_inst_dic():
             inst = self.get_inst_dic()[inst_name]
             cell = inst.get_cell()
-            info_str += f"{inst_name} {cell.get_name()} {cell.get_type()}\n"
+            info_str += f"\n{inst_name} {cell.get_name()} {cell.get_type()}"
         return info_str
