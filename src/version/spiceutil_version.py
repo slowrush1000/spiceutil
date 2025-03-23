@@ -8,3 +8,6 @@ class Version:
 
     def get_version(self):
         return self.m_version
+
+    def get_info_str(self):
+        return f"{self.get_program()} {self.get_version()}"

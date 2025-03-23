@@ -1,25 +1,24 @@
 import sys
 import os
-import datetime
 import inspect
+import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import input
 import log
 import netlist
+import version
+import run
 
 
-class Parser:
-    def __init__(self, log=None):
+class Parser(run.Run):
+    def __init__(self, t_input=None, t_netlist=None):
+        super().__init__(t_input, t_netlist)
+        #
         self.m_cur_cellname = netlist.k_TOP_CELLNAME
         self.m_cur_cell = None
         #
-        self.m_input = None
-        #
-        self.m_netlist = netlist.Netlist()
-        self.m_log = log
-        #
-        self.m_default_top_cell = self.m_netlist.get_cell(
+        self.m_default_top_cell = self.get_netlist().get_cell(
             netlist.k_TOP_CELLNAME, netlist.Type.CELL_CELL
         )
         if None == self.m_default_top_cell:
@@ -31,6 +30,12 @@ class Parser:
                 self.m_default_top_cell,
                 netlist.Type.CELL_CELL,
             )
+
+    def set_netlist(self, netlist):
+        self.m_netlist = netlist
+
+    def get_netlist(self):
+        return self.m_netlist
 
     def set_cur_cellname(self, cellname):
         self.m_cur_cellname = cellname
@@ -44,29 +49,11 @@ class Parser:
     def get_cur_cell(self):
         return self.m_cur_cell
 
-    def set_input(self, input):
-        self.m_input = input
-
-    def get_input(self):
-        return self.m_input
-
-    def set_netlist(self, netlist):
-        self.m_netlist = netlist
-
-    def get_netlist(self):
-        return self.m_netlist
-
-    def set_log(self, log):
-        self.m_log = log
-
-    def get_log(self):
-        return self.m_log
-
     def get_default_top_cell(self):
         return self.m_default_top_cell
 
     def read_1st(self, filename):
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({filename}) 1st start ... {
             datetime.datetime.now()}"
         )
@@ -99,11 +86,11 @@ class Parser:
                     self.read_total_line_1st(total_line, filename)
                     total_line = line
         self.read_total_line_1st(total_line, filename)
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"    {nlines} lines ... {
             datetime.datetime.now()}"
         )
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({filename}) 1st end ... {datetime.datetime.now()}\n"
         )
 
@@ -171,7 +158,7 @@ class Parser:
             self.read_1st(t_filename)
 
     def read_2nd(self, filename):
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({filename}) 2nd start ... {
             datetime.datetime.now()}"
         )
@@ -204,11 +191,11 @@ class Parser:
                     self.read_total_line_2nd(total_line, filename)
                     total_line = line
         self.read_total_line_2nd(total_line, filename)
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"    {nlines} lines ... {
             datetime.datetime.now()}"
         )
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({filename}) 2nd end ... {datetime.datetime.now()}\n"
         )
 
@@ -733,7 +720,7 @@ class Parser:
                 return netlist.Type.INIT
 
     def find_subckt_model(self):
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# find subckt model start ... {datetime.datetime.now()}"
         )
         #
@@ -759,21 +746,21 @@ class Parser:
         for name, type in insert_name_cell_types:
             cell = netlist.Cell(name, type)
             self.get_netlist().add_cell(name, cell, type)
-            self.get_log().get_logger().info(
+            self.get_input().get_log().get_logger().info(
                 f"cell({self.get_netlist().get_cell_key(name, type)}) is added"
             )
         #
         for delete_cell_key in delete_cell_keys:
             del self.get_netlist().get_cell_dic()[delete_cell_key]
-            self.get_log().get_logger().info(
+            self.get_input().get_log().get_logger().info(
                 f"cell({delete_cell_key}) is deleted"
             )
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# find subckt model end ... { datetime.datetime.now()}\n"
         )
 
     def run(self):
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({self.get_input().get_spice_filename()}) start ... {datetime.datetime.now()}\n"
         )
         #
@@ -786,25 +773,29 @@ class Parser:
                 f"{self.get_input().get_output_prefix()}.1st.spc"
             )
             self.get_netlist().write_netlist(
-                self.get_log().get_logger(),
+                self.get_input().get_log().get_logger(),
                 spc_1st_filename,
                 self.get_input().get_text_width(),
+                self.get_input().get_version().get_info_str(),
             )
         #
         self.read_2nd(self.get_input().get_spice_filename())
-        self.get_netlist().print_info(self.get_log().get_logger())
-        self.get_netlist().print_inst_info(self.get_log().get_logger())
+        self.get_netlist().print_info(self.get_input().get_log().get_logger())
+        self.get_netlist().print_inst_info(
+            self.get_input().get_log().get_logger()
+        )
         if True == self.get_input().get_is_write_2nd_spc():
             spc_2nd_filename = (
                 f"{self.get_input().get_output_prefix()}.2nd.spc"
             )
             self.get_netlist().write_netlist(
-                self.get_log().get_logger(),
+                self.get_input().get_log().get_logger(),
                 spc_2nd_filename,
                 self.get_input().get_text_width(),
+                self.get_input().get_version().get_info_str(),
             )
         #
-        self.get_log().get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# read file({self.get_input().get_spice_filename()}) end ... {datetime.datetime.now()}\n"
         )
 

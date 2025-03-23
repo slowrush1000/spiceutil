@@ -7,7 +7,7 @@ sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src"
 )
 import log
-import parser
+import run_parser
 import run_findvnet
 from spiceutil import Spiceutil
 

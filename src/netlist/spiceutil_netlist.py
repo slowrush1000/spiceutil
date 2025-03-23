@@ -152,7 +152,7 @@ class Netlist(Parameters):
         #
         return netlist_str
 
-    def write_netlist(self, logger=None, filename=None, width=120):
+    def write_netlist(self, logger=None, filename=None, width=120, header=""):
         if None == logger:
             if None == filename:
                 print(f"# write netlist start ... {datetime.datetime.now()}")
@@ -171,6 +171,7 @@ class Netlist(Parameters):
                 print(f"# write netlist start ... {datetime.datetime.now()}")
                 print(f"netlist file : {filename}")
                 f = open(filename, "wt")
+                f.write(f"* {header}\n")
                 for netlist_line in self.get_netlist_str():
                     wrap_netlist_lines = textwrap.wrap(
                         netlist_line,
@@ -207,6 +208,7 @@ class Netlist(Parameters):
                 )
                 logger.info(f"netlist file : {filename}")
                 f = open(filename, "wt")
+                f.write(f"* {header}\n")
                 for netlist_line in self.get_netlist_str():
                     wrap_netlist_lines = textwrap.wrap(
                         netlist_line,

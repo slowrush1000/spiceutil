@@ -6,7 +6,7 @@ import log
 import run_makeiprobe
 import run_findvnet
 import netlist
-import parser
+import run_parser
 import time
 import tomllib
 import version
@@ -124,15 +124,21 @@ class Spiceutil:
             case "config":
                 pass
             case "parser":
-                my_parser = parser.Parser()
-                my_parser.set_input(self.get_input())
-                my_parser.set_log(self.get_input().get_log())
+                my_parser = run_parser.Parser(
+                    self.get_input(), netlist.Netlist()
+                )
                 my_parser.run()
             case "findvnet":
                 my_findvnet = run_findvnet.Findvnet(
-                    self.get_input(), self.get_input().get_log().get_logger()
+                    self.get_input(), netlist.Netlist()
                 )
                 my_findvnet.run()
+            case "makeiprobe":
+                my_makeiprobe = run_makeiprobe.Makeiprobe(
+                    self.get_input(), self.get_input().get_log().get_logger()
+                )
+                my_makeiprobe.run()
+
         #
         self.get_input().get_log().get_logger().info(
             f"# {version.Version().get_program()} {version.Version().get_version()} end ... {datetime.datetime.now()}\n"

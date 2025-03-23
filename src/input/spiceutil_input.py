@@ -7,6 +7,7 @@ import socket
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import log
 import netlist
+import version
 
 
 class Input:
@@ -32,6 +33,7 @@ class Input:
         self.m_cwd = os.getcwd()
         #
         self.m_log = None
+        self.m_version = version.Version()
 
     def set_config_filename(self, config_filename):
         self.m_config_filename = config_filename
@@ -132,8 +134,16 @@ class Input:
     def get_log(self):
         return self.m_log
 
+    def set_version(self, version):
+        self.m_version = version
+
+    def get_version(self):
+        return self.m_version
+
     def get_system_str(self):
         s = f"--------------------------------------------------------\n"
+        s += f"{self.get_version().get_program()} {self.get_version().get_version()}\n"
+        s += f"--------------------------------------------------------\n"
         s += f"user             : {self.get_user()}\n"
         s += f"hostname         : {self.get_hostname()}\n"
         s += f"cwd              : {self.get_cwd()}\n"
