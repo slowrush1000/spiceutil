@@ -8,63 +8,39 @@ import netlist
 import log
 import run_parser
 import version
+import run
 
 
-class Makeiprobe:
-    def __init__(self, input=None, logger=None):
-        self.m_input = input
-        self.m_logger = logger
-        self.m_netlist = None
-
-    def set_input(self, input):
-        self.m_input = input
-
-    def get_input(self):
-        return self.m_input
-
-    def set_logger(self, logger):
-        self.m_logger = logger
-
-    def get_logger(self):
-        return self.m_logger
-
-    def set_netlist(self, netlist):
-        self.m_netlist = netlist
-
-    def get_netlist(self):
-        return self.m_netlist
-
-    def run_parser(self):
-        my_parser = run_parser.Parser(self.get_input().get_log())
-        my_parser.set_input(self.get_input())
-        my_parser.run()
-        self.set_netlist(my_parser.get_netlist())
+class Makeiprobe(run.Run):
+    def __init__(self, t_input=None, t_netlist=None):
+        super().__init__(t_input, t_netlist)
 
     def makeiprobe(self):
-        self.get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# makeiprobe start ... {datetime.datetime.now()}"
         )
         top_cell = self.get_netlist().get_cell(
             self.get_input().get_top_cellname(), netlist.Type.CELL_CELL
         )
         if None == top_cell:
-            self.get_logger().info(
+            self.get_input().get_log().get_logger().info(
                 f"# error : top cell({self.get_top_cellname()}) dont exist!"
             )
-            self.get_logger().info(
-                f"# error : {self.makeiprobe.__name__}:{
-                inspect.currentframe().f_lineno})"
+            self.get_input().get_log().get_logger().info(
+                f"# error : {self.makeiprobe.__name__}:{inspect.currentframe().f_lineno})"
             )
             exit()
         #
         for netname in self.get_input().get_netnames():
-            self.get_logger().info(
+            self.get_input().get_log().get_logger().info(
                 f"# makeiprobe({netname}) start ... { datetime.datetime.now()}"
             )
             probe_filename = (
                 f"{self.get_input().get_output_prefix()}.{netname}.probe"
             )
-            self.get_logger().info(f"probe file   : {probe_filename}")
+            self.get_input().get_log().get_logger().info(
+                f"probe file   : {probe_filename}"
+            )
             #
             probe_file = open(probe_filename, "wt")
             probe_file.write(
@@ -77,11 +53,11 @@ class Makeiprobe:
             self.makeiprobe_recursive(top_cell, probe_file, netname, "", 0)
             probe_file.write(f"*\n")
             probe_file.close()
-            self.get_logger().info(
+            self.get_input().get_log().get_logger().info(
                 f"# make iprobe({netname}) end ... {
                 datetime.datetime.now()}"
             )
-        self.get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# make iprobe end ... {datetime.datetime.now()}"
         )
 
@@ -124,7 +100,7 @@ class Makeiprobe:
                     node = inst.get_node(pos)
                     if netname.lower() == node.get_name().lower():
                         # subckt model :
-                        if cell.get_type() in netlist.k_SUBCKT_TYPES_SET:
+                        if cell.get_type() in netlist.get_subckt_types_set():
                             self.write_iprobe_subckt_model(
                                 probe_file, pos, inst_name_1, cell
                             )
@@ -142,11 +118,11 @@ class Makeiprobe:
         )
 
     def run(self, args=None):
-        self.get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# makeiprobe start ... {datetime.datetime.now()}"
         )
         self.run_parser()
         self.makeiprobe()
-        self.get_logger().info(
+        self.get_input().get_log().get_logger().info(
             f"# makeiprobe end ... {datetime.datetime.now()}"
         )

@@ -65,7 +65,7 @@ class Cell(Object, Parameters):
     def get_pins(self):
         return self.m_pins
 
-    def SetInstSize(self, inst_size):
+    def set_inst_size(self, inst_size):
         self.m_inst_size = inst_size
 
     def get_inst_size(self):
@@ -127,5 +127,7 @@ class Cell(Object, Parameters):
         for inst_name in self.get_inst_dic():
             inst = self.get_inst_dic()[inst_name]
             cell = inst.get_cell()
+            # if None == cell:
+            #    print(f"#debug- {inst_name}")
             info_str += f"\n{inst_name} {cell.get_name()} {cell.get_type()}"
         return info_str

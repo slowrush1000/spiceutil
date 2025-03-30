@@ -1,15 +1,14 @@
 import datetime
 import textwrap
 from .spiceutil_parameters import Parameters
-from .spiceutil_utils import k_TOP_CELLNAME
-from .spiceutil_utils import Type
+from .spiceutil_utils import *
 
 
 class Netlist(Parameters):
     def __init__(self):
         super().__init__()
         self.m_cell_dic = {}
-        self.m_top_cellname = k_TOP_CELLNAME
+        self.m_top_cellname = get_k_default_top_cellname()
         self.m_top_cell = None
         self.m_cell_key_delim = "="
         self.m_global_nodenames = []
@@ -141,11 +140,13 @@ class Netlist(Parameters):
         #
         for key in self.m_cell_dic:
             cell = self.m_cell_dic[key]
-            if k_TOP_CELLNAME == cell.get_name():
+            if get_k_default_top_cellname() == cell.get_name():
                 continue
             netlist_str += cell.get_netlist_str()
         #
-        k_top_cell_key = self.get_cell_key(k_TOP_CELLNAME, Type.CELL_CELL)
+        k_top_cell_key = self.get_cell_key(
+            get_k_default_top_cellname(), Type.CELL_CELL
+        )
         if k_top_cell_key in self.m_cell_dic:
             cell = self.m_cell_dic[k_top_cell_key]
             netlist_str += cell.get_netlist_str(False)

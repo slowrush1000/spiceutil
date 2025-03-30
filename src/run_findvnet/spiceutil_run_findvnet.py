@@ -16,10 +16,10 @@ class Findvnet(run.Run):
     def __init__(self, t_input=None, t_netlist=None):
         super().__init__(t_input, t_netlist)
 
-    def run_parser(self):
-        my_parser = run_parser.Parser(self.get_input(), self.get_netlist())
-        my_parser.run()
-        self.set_netlist(my_parser.get_netlist())
+    # def run_parser(self):
+    #    my_parser = run_parser.Parser(self.get_input(), self.get_netlist())
+    #    my_parser.run()
+    #    self.set_netlist(my_parser.get_netlist())
 
     def findvnet(self):
         self.get_input().get_log().get_logger().info(
@@ -58,6 +58,10 @@ class Findvnet(run.Run):
                 f"findvnet({netname}) end ... {
                datetime.datetime.now()}"
             )
+        #
+        self.get_input().get_log().get_logger().info(
+            f"# findvnet end ... {datetime.datetime.now()}"
+        )
 
     def find_vnet_recursive(
         self,

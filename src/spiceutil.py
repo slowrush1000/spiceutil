@@ -3,14 +3,15 @@ import datetime
 import input
 import logging
 import log
-import run_makeiprobe
-import run_findvnet
 import netlist
-import run_parser
 import time
 import tomllib
 import version
 import psutil
+import run_parser
+import run_makeiprobe
+import run_findvnet
+import run_flatten
 
 
 class Spiceutil:
@@ -100,6 +101,10 @@ class Spiceutil:
                 self.get_input().get_log().set_level(config["log_verbose"])
             if "text_width" in config:
                 self.get_input().set_text_width(int(config["text_width"]))
+            if "flatten_delimiter" in config:
+                self.get_input().set_flatten_delimiter(
+                    config["flatten_delimiter"]
+                )
         #
         self.get_input().get_log().get_logger().info(
             f"# read config file({self.get_input().get_config_filename()}) end ... {datetime.datetime.now()}\n"
@@ -135,10 +140,14 @@ class Spiceutil:
                 my_findvnet.run()
             case "makeiprobe":
                 my_makeiprobe = run_makeiprobe.Makeiprobe(
-                    self.get_input(), self.get_input().get_log().get_logger()
+                    self.get_input(), netlist.Netlist()
                 )
                 my_makeiprobe.run()
-
+            case "flatten":
+                my_flatten = run_flatten.Flatten(
+                    self.get_input(), netlist.Netlist()
+                )
+                my_flatten.run()
         #
         self.get_input().get_log().get_logger().info(
             f"# {version.Version().get_program()} {version.Version().get_version()} end ... {datetime.datetime.now()}\n"

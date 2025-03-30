@@ -18,7 +18,7 @@ class Input:
         self.m_run = ""
         self.m_output_prefix = ""
         self.m_spice_filename = ""
-        self.m_top_cellname = netlist.k_TOP_CELLNAME
+        self.m_top_cellname = netlist.get_k_default_top_cellname()
         self.m_netnames = []
         self.m_casesensitive = False
         self.m_dollar_comment = False
@@ -27,6 +27,7 @@ class Input:
         self.m_is_write_2nd_spc = False
         self.m_log_verbose = "INFO"
         self.m_text_width = 80
+        self.m_flatten_delimiter = "_"
         #
         self.m_user = getpass.getuser()
         self.m_hostname = socket.gethostname()
@@ -119,6 +120,12 @@ class Input:
     def get_text_width(self):
         return self.m_text_width
 
+    def set_flatten_delimiter(self, flatten_delimiter):
+        self.m_flatten_delimiter = flatten_delimiter
+
+    def get_flatten_delimiter(self):
+        return self.m_flatten_delimiter
+
     def get_user(self):
         return self.m_user
 
@@ -152,20 +159,21 @@ class Input:
 
     def get_str(self):
         s = f"--------------------------------------------------------\n"
-        s += f"config file      : {self.get_config_filename()}\n"
-        s += f"args             : {' '.join(self.get_args())}\n"
+        s += f"config file          : {self.get_config_filename()}\n"
+        s += f"args                 : {' '.join(self.get_args())}\n"
         s += f"--------------------------------------------------------\n"
-        s += f"run              : {self.get_run()}\n"
-        s += f"output prefix    : {self.get_output_prefix()}\n"
-        s += f"spice file       : {self.get_spice_filename()}\n"
-        s += f"top cell         : {self.get_top_cellname()}\n"
-        s += f"netnames         : {' '.join(self.get_netnames())}\n"
+        s += f"run                  : {self.get_run()}\n"
+        s += f"output prefix        : {self.get_output_prefix()}\n"
+        s += f"spice file           : {self.get_spice_filename()}\n"
+        s += f"top cell             : {self.get_top_cellname()}\n"
+        s += f"netnames             : {' '.join(self.get_netnames())}\n"
         s += f"--------------------------------------------------------\n"
-        s += f"casesensitive    : {self.get_casesensitive()}\n"
-        s += f"dollar_comment   : {self.get_dollar_comment()}\n"
-        s += f"write 1st spc    : {self.get_is_write_1st_spc()}\n"
-        s += f"write 2nd spc    : {self.get_is_write_2nd_spc()}\n"
-        s += f"log verbose      : {self.get_log_verbose()}\n"
-        s += f"text width       : {self.get_text_width()}\n"
+        s += f"casesensitive        : {self.get_casesensitive()}\n"
+        s += f"dollar_comment       : {self.get_dollar_comment()}\n"
+        s += f"write 1st spc        : {self.get_is_write_1st_spc()}\n"
+        s += f"write 2nd spc        : {self.get_is_write_2nd_spc()}\n"
+        s += f"log verbose          : {self.get_log_verbose()}\n"
+        s += f"text width           : {self.get_text_width()}\n"
+        s += f"flatten delimiter    : {self.get_flatten_delimiter()}\n"
         s += f"--------------------------------------------------------"
         return s

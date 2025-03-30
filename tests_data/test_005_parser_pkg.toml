@@ -1,0 +1,12 @@
+# test_003_findvnet
+run                 = "parser"
+spice_file          = "tests_data/005_pkg.spc"
+#top_cell           = "top_cell"
+#netnames            = "vdd vss vddq vssq"
+#
+casesensitive       = false
+dollar_comment      = false
+is_write_1st_spc    = true
+is_write_2nd_spc    = true
+#log_verbose       = "NOTSET" "DEBUG" "INFO" "WARNING" "ERROR" "CRITICAL"
+log_verbose         = "DEBUG"
