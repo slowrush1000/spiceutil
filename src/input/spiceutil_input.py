@@ -3,6 +3,7 @@ import os
 import logging
 import getpass
 import socket
+import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import log
@@ -147,14 +148,15 @@ class Input:
     def get_version(self):
         return self.m_version
 
-    def get_system_str(self):
-        s = f"--------------------------------------------------------\n"
-        s += f"{self.get_version().get_program()} {self.get_version().get_version()}\n"
-        s += f"--------------------------------------------------------\n"
-        s += f"user             : {self.get_user()}\n"
-        s += f"hostname         : {self.get_hostname()}\n"
-        s += f"cwd              : {self.get_cwd()}\n"
-        s += f"--------------------------------------------------------"
+    def get_system_str(self, first_char="#"):
+        s = f"{first_char}--------------------------------------------------------\n"
+        s += f"{first_char}{self.get_version().get_program()} {self.get_version().get_version()}\n"
+        s += f"{first_char}start at {datetime.datetime.now()}\n"
+        s += f"{first_char}--------------------------------------------------------\n"
+        s += f"{first_char}user     : {self.get_user()}\n"
+        s += f"{first_char}hostname : {self.get_hostname()}\n"
+        s += f"{first_char}cwd      : {self.get_cwd()}\n"
+        s += f"{first_char}--------------------------------------------------------"
         return s
 
     def get_str(self):

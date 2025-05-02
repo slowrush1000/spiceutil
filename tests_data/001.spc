@@ -54,12 +54,25 @@ d1 in  vdd d
 .subckt s_inv_normal in out $ comment
 xs_mp out in vdd vdd s_p l=1u w=4u
 xs_mn out in vss vss s_n l=1u w=2u
-d1 in  vdd d
+d1 in vdd d
+r1 in 1 100
+l1 1  2 1n
+l2 2  3 0.001n
+c1 3  4 1u
+k1 l1 l2 0.1
+vs1 5 6 100
+is1 6 7 1m 
+e1  7 8 5 6 10
+g1  8 9 6 7 20
+h1  9 10 vs1 100 
+f1  10 11 vs1 200
 .ends
 
 .subckt s_inv_normal_binning in out $ comment
 xs_mp_binning out in vdd vdd s_p_binning l=1u w=4u
 xs_mn_binning out in vss vss s_n_binning l=1u w=2u
+r1 in 1 100
+r2 1 out 200
 d2 in  vdd d
 .ends
 
@@ -67,3 +80,5 @@ xinv_normal in out inv_normal
 xinv_normal_binning in out inv_normal_binning
 xs_inv_normal in out s_inv_normal
 xs_inv_normal_binning in out s_inv_normal_binning
+
+.global vdd

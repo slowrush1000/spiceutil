@@ -1,17 +1,19 @@
 import sys
 import datetime
-import input
 import logging
-import log
-import netlist
 import time
 import tomllib
 import version
 import psutil
-import run_parser
-import run_makeiprobe
+import input
+import log
+import netlist
+import run
 import run_findvnet
 import run_flatten
+import run_makeiprobe
+import run_parser
+import version
 
 
 class Spiceutil:
@@ -25,9 +27,7 @@ class Spiceutil:
         return self.m_input
 
     def print_usage(self):
-        print(
-            f"{version.Version().get_program()} {version.Version().get_version()}"
-        )
+        print(f"{version.Version().get_program()} {version.Version().get_version()}")
         print(f"spiceutil.py usage:")
         print(f"% spiceutil.py output_prefix config_file")
 
@@ -42,29 +42,19 @@ class Spiceutil:
         self.get_input().set_log(my_log)
 
     def print_input(self):
-        self.get_input().get_log().get_logger().info(
-            f"# print input start ... {datetime.datetime.now()}"
-        )
-        self.get_input().get_log().get_logger().info(
-            f"{self.get_input().get_str()}"
-        )
-        self.get_input().get_log().get_logger().info(
-            f"# print input end ... {datetime.datetime.now()}\n"
-        )
+        self.get_input().get_log().get_logger().info(f"# print input start ... {datetime.datetime.now()}")
+        self.get_input().get_log().get_logger().info(f"{self.get_input().get_str()}")
+        self.get_input().get_log().get_logger().info(f"# print input end ... {datetime.datetime.now()}\n")
 
     def read_args(self, args):
-        self.get_input().get_log().get_logger().info(
-            f"# read args start ... {datetime.datetime.now()}"
-        )
+        self.get_input().get_log().get_logger().info(f"# read args start ... {datetime.datetime.now()}")
         if 3 != len(args):
             self.print_usage()
             exit()
         self.get_input().set_output_prefix(args[1])
         self.get_input().set_config_filename(args[2])
         self.get_input().set_args(args)
-        self.get_input().get_log().get_logger().info(
-            f"# read args end ... {datetime.datetime.now()}\n"
-        )
+        self.get_input().get_log().get_logger().info(f"# read args end ... {datetime.datetime.now()}\n")
 
     def read_config_file(self):
         self.get_input().get_log().get_logger().info(
@@ -89,22 +79,16 @@ class Spiceutil:
             if "all_probe" in config:
                 self.get_input().set_all_probe(config["all_probe"])
             if "is_write_1st_spc" in config:
-                self.get_input().set_is_write_1st_spc(
-                    config["is_write_1st_spc"]
-                )
+                self.get_input().set_is_write_1st_spc(config["is_write_1st_spc"])
             if "is_write_2nd_spc" in config:
-                self.get_input().set_is_write_2nd_spc(
-                    config["is_write_2nd_spc"]
-                )
+                self.get_input().set_is_write_2nd_spc(config["is_write_2nd_spc"])
             if "log_verbose" in config:
                 self.get_input().set_log_verbose(config["log_verbose"])
                 self.get_input().get_log().set_level(config["log_verbose"])
             if "text_width" in config:
                 self.get_input().set_text_width(int(config["text_width"]))
             if "flatten_delimiter" in config:
-                self.get_input().set_flatten_delimiter(
-                    config["flatten_delimiter"]
-                )
+                self.get_input().set_flatten_delimiter(config["flatten_delimiter"])
         #
         self.get_input().get_log().get_logger().info(
             f"# read config file({self.get_input().get_config_filename()}) end ... {datetime.datetime.now()}\n"
@@ -118,9 +102,7 @@ class Spiceutil:
         self.get_input().get_log().get_logger().info(
             f"# {version.Version().get_program()} {version.Version().get_version()} start ... {datetime.datetime.now()}"
         )
-        self.get_input().get_log().get_logger().info(
-            f"{self.get_input().get_system_str()}\n"
-        )
+        self.get_input().get_log().get_logger().info(f"{self.get_input().get_system_str()}\n")
         self.read_args(args)
         self.read_config_file()
         self.print_input()
@@ -129,24 +111,16 @@ class Spiceutil:
             case "config":
                 pass
             case "parser":
-                my_parser = run_parser.Parser(
-                    self.get_input(), netlist.Netlist()
-                )
+                my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
             case "findvnet":
-                my_findvnet = run_findvnet.Findvnet(
-                    self.get_input(), netlist.Netlist()
-                )
+                my_findvnet = run_findvnet.Findvnet(self.get_input(), netlist.Netlist())
                 my_findvnet.run()
             case "makeiprobe":
-                my_makeiprobe = run_makeiprobe.Makeiprobe(
-                    self.get_input(), netlist.Netlist()
-                )
+                my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_input(), netlist.Netlist())
                 my_makeiprobe.run()
             case "flatten":
-                my_flatten = run_flatten.Flatten(
-                    self.get_input(), netlist.Netlist()
-                )
+                my_flatten = run_flatten.flatten(self.get_input(), netlist.Netlist())
                 my_flatten.run()
         #
         self.get_input().get_log().get_logger().info(

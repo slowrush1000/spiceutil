@@ -21,6 +21,7 @@ class Parameters:
     def __init__(self):
         super().__init__()
         self.m_equation_value_dic = {}  # key : name, data : equationvalue
+        self.m_param_names = []
 
     def is_exist_parameter(self, name):
         if name in self.m_equation_value_dic:
@@ -32,6 +33,13 @@ class Parameters:
         if False == self.is_exist_parameter(name):
             equation_value = EquationValue(equation, 0.0)
             self.m_equation_value_dic[name] = equation_value
+            self.m_param_names.append(name)
         else:
             equation_value = self.m_equation_value_dic[name]
             equation_value.set_equation(equation)
+
+    def get_equation_value_dic(self):
+        return self.m_equation_value_dic
+
+    def get_param_names(self):
+        return self.m_param_names

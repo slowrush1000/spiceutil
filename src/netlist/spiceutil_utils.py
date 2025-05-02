@@ -1,5 +1,7 @@
 from enum import Enum, auto
 import inspect
+import textwrap
+import os
 
 
 class Type(Enum):
@@ -127,6 +129,36 @@ def get_k_default_cellname_dic():
     return k_DEFAULT_CELLNAME_DIC
 
 
+def get_first_char_inst(type):
+    k_DEFAULT_FIRST_CHAR_DIC = {
+        Type.INST_R: "r",
+        Type.INST_L: "l",
+        Type.INST_C: "c",
+        Type.INST_K: "k",
+        Type.INST_VS: "v",
+        Type.INST_CS: "i",
+        Type.INST_VCVS: "e",
+        Type.INST_CCVS: "g",
+        Type.INST_VCCS: "h",
+        Type.INST_CCCS: "f",
+        Type.INST_DIODE: "d",
+        Type.INST_MOSFET: "m",
+        Type.INST_BJT: "q",
+        Type.INST_JFET: "j",
+        Type.INST_INST: "x",
+    }
+    if type in k_DEFAULT_FIRST_CHAR_DIC:
+        return k_DEFAULT_FIRST_CHAR_DIC[type]
+    else:
+        return "*"
+
+
+def get_k_default_cellname_set():
+    k_DEFAULT_CELLLNAMES = ["r", "l", "c", "k", "v", "i", "e", "g", "h", "f"]
+    k_DEFAULT_CELLNAME_SET = set(k_DEFAULT_CELLLNAMES)
+    return k_DEFAULT_CELLNAME_SET
+
+
 def get_subckt_types_set():
     k_SUBCKT_TYPES = [
         Type.CELL_CELL_DIODE,
@@ -202,17 +234,21 @@ def get_type_name(type):
             return ""
 
 
-def get_trace_info_str():
+def get_error_str(msg):
     frame = inspect.currentframe().f_back
     filename = frame.f_code.co_filename
     function_name = frame.f_code.co_name
     line_number = frame.f_lineno
-    return f"{filename} : {function_name} : {line_number}"
-
-
-def get_error_str(msg):
-    return f"{msg}({get_trace_info_str()})"
+    return f"{msg}({os.path.basename(filename)}:{function_name}:{line_number})"
 
 
 def get_netname(hier_netname):
     return hier_netname.split(".")[-1]
+
+
+def write_wrap_line(file, line, textwidth=100):
+    wrap_lines = textwrap.wrap(
+        line, width=textwidth, subsequent_indent="+ ", break_long_words=False, break_on_hyphens=False
+    )
+    for wrap_line in wrap_lines:
+        file.write(f"{wrap_line}")
