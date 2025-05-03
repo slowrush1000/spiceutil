@@ -116,15 +116,19 @@ class Parser(run.Run):
     def read_total_line_1st_subckt_line(self, tokens):
         name = tokens[1]
         type = netlist.Type.CELL_CELL
-        if False == self.get_netlist().is_exist_cell(name, type):
+        key = self.get_netlist().get_cell_key(name, type)
+        cell = self.get_netlist().get_cell_by_key(key)
+        if None == cell:
             cell = netlist.Cell(name, type)
             self.set_cur_cellname(name)
             self.get_netlist().add_cell(name, cell, type)
+            self.get_netlist().add_key(key)
 
     def read_total_line_1st_ends_line(self):
         self.set_cur_cellname(netlist.get_k_default_top_cellname())
         self.set_cur_cell(self.get_default_top_cell())
 
+    # .model name ...
     def read_total_line_1st_model_line(self, tokens):
         name = tokens[1].split(".")[0]
         type_name = tokens[2]
@@ -144,9 +148,12 @@ class Parser(run.Run):
         elif "pjf" == type_name:
             type = netlist.Type.CELL_PJF
         #
-        if False == self.get_netlist().is_exist_cell(name, type):
+        cell = self.get_netlist().get_cell(name, type)
+        if None == cell:
             cell = netlist.Cell(name, type)
             self.get_netlist().add_cell(name, cell, type)
+        #
+        self.read_parameter_cell(cell, tokens, 2)
 
     def read_total_line_1st_include_line(self, tokens, filename):
         t_filename = tokens[1].replace('"', "").replace("'", "")

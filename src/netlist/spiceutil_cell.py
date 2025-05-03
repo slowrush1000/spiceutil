@@ -1,4 +1,3 @@
-#
 from .spiceutil_object import Object
 from .spiceutil_parameters import Parameters
 from .spiceutil_inst import Inst
@@ -6,12 +5,11 @@ from .spiceutil_utils import *
 
 
 class Cell(Object, Parameters):
-    def __init__(self, name="", type=Type.INIT):
-        super().__init__()
-        self.m_name = name
-        self.m_type = type
+    def __init__(self, name="", type=Type.INIT, selected=False):
+        super().__init__(name, type, selected)
         self.m_inst_dic = {}  # key : name, data : inst
         self.m_node_dic = {}  # key : name, data : node
+        self.m_model_dic = {}  # key : name, data : cell(model)
         self.m_pins = []
         self.m_pin_set = None
         self.m_inst_size = 0
@@ -53,6 +51,25 @@ class Cell(Object, Parameters):
 
     def get_node_dic(self):
         return self.m_node_dic
+
+    def is_exist_model(self, name):
+        if name in self.m_model_dic:
+            return True
+        else:
+            return False
+
+    def add_model(self, name, model):
+        if not name in self.m_model_dic:
+            self.m_model_dic[name] = model
+
+    def get_model(self, name):
+        if True == self.is_exist_model(name):
+            return self.m_model_dic[name]
+        else:
+            return None
+
+    def get_model_dic(self):
+        return self.m_model_dic
 
     def add_pin(self, name, pin):
         if not name in self.m_node_dic:

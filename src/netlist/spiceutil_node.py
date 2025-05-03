@@ -3,10 +3,8 @@ from .spiceutil_utils import Type
 
 
 class Node(Object):
-    def __init__(self, name="", type=Type.INIT):
-        super().__init__()
-        self.m_name = name
-        self.m_type = type
+    def __init__(self, name="", type=Type.INIT, selected=False):
+        super().__init__(name, type, selected)
         self.m_inst_dic = {}
 
     def add_inst(self, name, inst):

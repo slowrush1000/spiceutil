@@ -1,4 +1,6 @@
-spice netlist format
+# model 처리방법
+
+# spice netlist format
 
 .subckt name pin1 pin2 ... pinN
 Rname n1 n2 value

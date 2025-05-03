@@ -4,10 +4,8 @@ from .spiceutil_utils import *
 
 
 class Inst(Object, Parameters):
-    def __init__(self, name="", type=Type.INIT):
-        super().__init__()
-        self.m_name = name
-        self.m_type = type
+    def __init__(self, name="", type=Type.INIT, selected=False):
+        super().__init__(name, type, selected)
         self.m_nodes = []
         self.m_insts = []
         self.m_cell = None
