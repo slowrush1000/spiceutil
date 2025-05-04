@@ -124,13 +124,19 @@ class Spiceutil:
                 my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
             case "findvnet":
-                my_findvnet = run_findvnet.Findvnet(self.get_input(), netlist.Netlist())
+                my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
+                my_parser.run()
+                my_findvnet = run_findvnet.Findvnet(self.get_input(), my_parser.get_netlist())
                 my_findvnet.run()
             case "makeiprobe":
-                my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_input(), netlist.Netlist())
+                my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
+                my_parser.run()
+                my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_input(), my_parser.get_netlist())
                 my_makeiprobe.run()
             case "flatten":
-                my_flatten = run_flatten.flatten(self.get_input(), netlist.Netlist())
+                my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
+                my_parser.run()
+                my_flatten = run_flatten.flatten(self.get_input(), my_parser.get_netlist())
                 my_flatten.run()
         #
         self.get_input().get_log().get_logger().info(

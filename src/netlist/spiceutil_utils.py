@@ -403,8 +403,13 @@ def write_wrap_line(file, line, textwidth=100):
 #    return f"{msg}({os.path.basename(filename)}:{function_name}:{line_number})"
 #
 #
-# def get_netname(hier_netname):
-#    return hier_netname.split(".")[-1]
-#
-#
-#
+
+
+# x0.x1.x2.x3 -> x0, x1, x2, x3
+def get_net_name(hier_netname):
+    return hier_netname.split(".")[-1]
+    #
+
+
+def get_cell_key(name, type, delim="="):
+    return f"{name}{delim}{type.name}"

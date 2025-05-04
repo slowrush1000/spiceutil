@@ -3,7 +3,7 @@
 #################################################################
 #run            = "config" "parser" "findvnet"
 run             = "parser"
-spice_file      = "tests_data/001.spc"
+spice_file      = "tests_data/002.spc"
 #netnames        = "vdd vss vddq vssq"
 #top_cell        = "top_cell"
 #

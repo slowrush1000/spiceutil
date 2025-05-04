@@ -1,8 +1,8 @@
 # test_003_findvnet
 run                 = "makeiprobe"
-spice_file          = "tests_data/002.spc"
+spice_file          = "tests_data/004.spc"
 #top_cell           = "top_cell"
-netnames            = "vdd vss vddq vssq"
+netnames            = "vdd vss"
 #
 casesensitive       = false
 dollar_comment      = false

@@ -1,71 +1,52 @@
-$ 001.spc
+$ 002.spc
 
-.model n nmos 
-+ vth=0.7
-+ vth0 = '34*45' $ aaa
-
-.model p pmos vth=0.7
-
-.model nt.0 nmos vth=0.7 vth0 = 1
-.model nt.1 nmos vth=0.8 vth0 = 1
-.model nt.2 nmos vth=0.9 vth0 = 1
-
-.model pt.0 pmos vth=0.7 vth0 = 1
-.model pt.1 pmos vth=0.8 vth0 = 1
-.model pt.2 pmos vth=0.9 vth0 = 1
-
-.subckt s_n d g s b l=l w=w
-.model s_n nmos vht0=10 vth=20
-main d g s b s_n l=l w=w
-.ends
-
-.subckt s_p d g s b l=l w=w
-.model s_p nmos vht0=10 vth=20
-main d g s b s_p l=l w=w
-.ends
+.model n nmos
+.model p pmos
 .model d d
+.model qn npn
+.model qp pnp
+.model jn njf
+.model jp pjf
 
-.subckt s_n_binning d g s b l=l w=w
-.model s_n_binning.0 nmos vth=0.7 vth0 = 1
-.model s_n_binning.1 nmos vth=0.8 vth0 = 1
-.model s_n_binning.2 nmos vth=0.9 vth0 = 1
-main d g s b s_n_binning l=l w=w
+.subckt ns d g s b
+.model ns nmos
+main d g s g ns l=10 w=10
 .ends
 
-.subckt s_p_binning d g s b l=l w=w
-.model s_p_binning.0 pmos vth=0.7 vth0 = 1
-.model s_p_binning.1 pmos vth=0.8 vth0 = 1
-.model s_p_binning.2 pmos vth=0.9 vth0 = 1
-main d g s b s_p_binning l=l w=w
+.subckt ps d g s b
+.model ps pmos
+main d g s g ps l=10 w=10
 .ends
 
-.subckt inv_normal in out $ comment
-mp out in vdd vdd p l=1u w=4u
-mn out in vss vss n l=1u w=2u
-d1 in  vdd d
+.subckt inv in out
+mn out in vss vss n l=1 w=2
+mp out in vdd vdd p l=1 w=2
 .ends
 
-.subckt inv_normal_binning in out $ comment
-mp out in vdd vdd pt l=1u w=4u
-mn out in vss vss nt l=1u w=2u
-d1 in  vdd d
+.subckt inv_s in out
+xmn out in vss vss ns l=1 w=2
+xmp out in vdd vdd ps l=1 w=2
 .ends
 
-.subckt s_inv_normal in out $ comment
-xs_mp out in vdd vdd s_p l=1u w=4u
-xs_mn out in vss vss s_n l=1u w=2u
-d1 in  vdd d
-.ends
+xinv in out inv
+xinv_s in out inv_s
 
-.subckt s_inv_normal_binning in out $ comment
-xs_mp_binning out in vdd vdd s_p_binning l=1u w=4u
-xs_mn_binning out in vss vss s_n_binning l=1u w=2u
-d2 in  vdd d
-.ends
-
-xinv_normal in out inv_normal
-xinv_normal_binning in out inv_normal_binning
-xs_inv_normal in out s_inv_normal
-xs_inv_normal_binning in out s_inv_normal_binning
-
-.global vdd
+r1 1 2 1
+r2 2 3 resStar r=2
+c1 3 4 1u
+l1 4 5 2u
+l2 5 6 4u
+k1 l1 l2 0.5
+vdd vdd 0 1
+idd vdd 0 100n
+e1 6 7 1 2  100
+g1 7 8 2 3  1000
+h1 8 9 vdd 10000
+f1 9 10 vdd 100000
+d1 10 11 dd l=100u w=200u
+qn1 11 12 vss qqn l=100u w=200u
+qp1 14 15 vdd qqp l=200u w=400u
+jn1 20 21 vss jn l=10u w=20u
+jp1 22 23 vdd jp l=30u w=40u
+mn0 100 101 vss vss n l=100u w=200u
+mp0 out in vdd vdd p l=200u w=400u

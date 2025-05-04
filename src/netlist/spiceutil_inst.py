@@ -27,6 +27,12 @@ class Inst(Object):
     def add_node(self, node):
         self.__nodes.append(node)
 
+    def get_node(self, pos):
+        if pos < len(self.get_nodes()):
+            return self.__nodes[pos]
+        else:
+            None
+
     def add_inst(self, inst):
         self.__insts.append(inst)
 

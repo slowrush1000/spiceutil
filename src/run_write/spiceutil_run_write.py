@@ -30,13 +30,6 @@ class Write(run.Run):
     def get_add_first_char(self):
         return self.__add_first_char
 
-    def run(self):
-        file = open(self.__file_name, "wt")
-        self.write_header(file)
-        self.write_global_net(file)
-        self.write_netlist_cells(file)
-        file.close()
-
     def write_header(self, file):
         file.write(f"*\n")
         file.write(f"{self.get_input().get_system_str("* ")}\n")
@@ -49,9 +42,7 @@ class Write(run.Run):
         file.write(f"\n")
 
     def write_netlist_cells(self, file):
-        cell_key = self.get_netlist().get_cell_key(
-            netlist.k_DEFAULT_TOP_CELL_NAME(), netlist.Type.CELL_CELL
-        )
+        cell_key = netlist.get_cell_key(netlist.k_DEFAULT_TOP_CELL_NAME(), netlist.Type.CELL_CELL)
         default_top_cell = self.get_netlist().get_cell_by_cell_key(cell_key)
         #
         for t_cell_key in self.get_netlist().get_cell_dic():
@@ -78,6 +69,16 @@ class Write(run.Run):
                 cell_line += f" {pin.get_name()}"
             netlist.write_wrap_line(file, cell_line)
             file.write("\n")
+        #
+        for t_cell_key in cell.get_cell_dic():
+            t_cell = cell.get_cell_dic()[t_cell_key]
+            if True == netlist.is_default_cell(t_cell.get_name(), t_cell.get_type()):
+                continue
+            #
+            if "*" == netlist.get_model_cell_name(t_cell.get_type()):
+                self.write_netlist_cell(file, t_cell, True)
+            else:
+                self.write_netlist_model(file, t_cell)
         #
         for inst_name in cell.get_inst_dic():
             node_names = []
@@ -242,7 +243,7 @@ class Write(run.Run):
     # dname n1 n2 cell ...
     # qname n1 n2 n3 cell ...
     def get_inst_line_other(self, inst_name, node_names, inst):
-        print(f"# debug+++: {inst.get_info_str()}")
+        # print(f"# debug+++: {inst.get_info_str()}")
         # xname n1 n2 ... nN
         inst_line = self.get_instname_instnodes_line(inst_name, node_names, inst)
         # cell
@@ -252,3 +253,10 @@ class Write(run.Run):
             equation = inst.get_param().get_equation_dic()[variable_name]
             inst_line += f" {variable_name}='{equation.get_s()}'"
         return inst_line
+
+    def run(self):
+        file = open(self.__file_name, "wt")
+        self.write_header(file)
+        self.write_global_net(file)
+        self.write_netlist_cells(file)
+        file.close()

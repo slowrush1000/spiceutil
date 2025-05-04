@@ -18,14 +18,14 @@ class Parser(run.Run):
         self.m_cur_cell_name = netlist.k_DEFAULT_TOP_CELL_NAME()
         self.m_cur_cell = None
         # init default top cell
-        self.m_default_top_cell = self.get_netlist().get_cell(
-            netlist.k_DEFAULT_TOP_CELL_NAME(), netlist.Type.CELL_CELL
-        )
+        cell_key = netlist.get_cell_key(netlist.k_DEFAULT_TOP_CELL_NAME(), netlist.Type.CELL_CELL)
+        self.m_default_top_cell = self.get_netlist().get_cell_by_cell_key(cell_key)
         if None == self.m_default_top_cell:
             self.m_default_top_cell = netlist.Cell(
                 netlist.k_DEFAULT_TOP_CELL_NAME(), netlist.Type.CELL_CELL
             )
             self.get_netlist().add_cell(self.m_default_top_cell)
+            self.get_netlist().add_cell_key(cell_key)
             self.set_cur_cell(self.m_default_top_cell)
 
     def set_netlist(self, netlist):
@@ -56,7 +56,7 @@ class Parser(run.Run):
         #
         for cell_type in netlist.k_DEFAULT_CELLS():
             cell_name = netlist.k_DEFAULT_CELL_DIC()[cell_type]
-            cell_key = self.get_netlist().get_cell_key(cell_name, cell_type)
+            cell_key = netlist.get_cell_key(cell_name, cell_type)
             cell = self.get_netlist().get_cell_by_cell_key(cell_key)
             if None == cell:
                 cell = netlist.Cell(cell_name, cell_type)
@@ -125,12 +125,25 @@ class Parser(run.Run):
     def read_total_line_1st_subckt_line(self, tokens):
         cell_name = tokens[1]
         cell_type = netlist.Type.CELL_CELL
-        cell_key = self.get_netlist().get_cell_key(cell_name, cell_type)
-        cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-        if None == cell:
-            cell = netlist.Cell(cell_name, cell_type)
-            self.get_netlist().add_cell(cell)
-            self.get_netlist().add_cell_key(cell_key)
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
+        # global
+        if netlist.k_DEFAULT_TOP_CELL_NAME() == self.get_cur_cell_name():
+            print(f"# debug+++: global {tokens} {self.get_cur_cell_name()}")
+            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+            if None == cell:
+                cell = netlist.Cell(cell_name, cell_type)
+                self.get_netlist().add_cell(cell)
+                self.get_netlist().add_cell_key(cell_key)
+            self.set_cur_cell(cell)
+            self.set_cur_cell_name(cell_name)
+        # local
+        else:
+            print(f"# debug+++: local {tokens}")
+            cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
+            if None == cell:
+                cell = netlist.Cell(cell_name, cell_type)
+                self.get_cur_cell().add_cell(cell)
+                self.get_cur_cell().add_cell_key(cell_key)
             self.set_cur_cell(cell)
             self.set_cur_cell_name(cell_name)
 
@@ -148,14 +161,23 @@ class Parser(run.Run):
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
-        model_key = self.get_netlist().get_cell_key(model_name, model_type)
-        model = self.get_netlist().get_cell_by_cell_key(model_key)
-        if None == model:
-            model = netlist.Cell(model_name, model_type)
-            self.get_netlist().add_cell(model)
-            self.get_netlist().add_cell_key(model_key)
-            #
-            self.get_cur_cell().add_cell(model)
+        model_key = netlist.get_cell_key(model_name, model_type)
+        # global
+        if netlist.k_DEFAULT_TOP_CELL_NAME() == self.get_cur_cell_name():
+            print(f"# debug+++: global {tokens} {self.get_cur_cell_name()}")
+            model = self.get_netlist().get_cell_by_cell_key(model_key)
+            if None == model:
+                model = netlist.Cell(model_name, model_type)
+                self.get_netlist().add_cell(model)
+                self.get_netlist().add_cell_key(model_key)
+        # local
+        else:
+            print(f"# debug+++: local {tokens} {self.get_cur_cell_name()}")
+            model = self.get_cur_cell().get_cell_by_cell_key(model_key)
+            if None == model:
+                model = netlist.Cell(model_name, model_type)
+                self.get_cur_cell().add_cell(model)
+                self.get_cur_cell().add_cell_key(model_key)
 
     def read_total_line_1st_include_line(self, tokens, file_name):
         t_file_name = tokens[1].replace('"', "").replace("'", "")
@@ -256,11 +278,16 @@ class Parser(run.Run):
         #
         cell_name = tokens[1]
         cell_type = netlist.Type.CELL_CELL
-        cell = self.get_netlist().get_cell(cell_name, cell_type)
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
+        cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
         if None == cell:
-            msg = f"cell({cell_name}) dont exist!"
-            self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
-            exit()
+            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+            if None == cell:
+                msg = f"cell({cell_name}) dont exist!"
+                self.get_input().get_log().get_logger().error(
+                    f"{netlist.get_file_func_line_s(msg)}"
+                )
+                exit()
         self.set_cur_cell(cell)
         #
         param_start_pos = self.get_param_start_pos(tokens)
@@ -273,7 +300,7 @@ class Parser(run.Run):
                 pin = netlist.Node(pin_name, netlist.Type.NODE_PIN)
                 cell.add_pin(pin)
             else:
-                msg = f"# error : cell({cell_name}) pin({pin_name}) is duplicate!"
+                msg = f"# error: cell({cell_name}) pin({pin_name}) is duplicate!"
                 self.get_input().get_log().get_logger().error(
                     f"{netlist.get_file_func_line_s(msg)}"
                 )
@@ -329,7 +356,7 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, inst_type)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
@@ -338,7 +365,7 @@ class Parser(run.Run):
         if 4 == param_start_pos and 4 < len(tokens):
             cell_name = tokens[param_start_pos - 1]
         # rname n1 n2 value
-        cell_key = self.get_netlist().get_cell_key(cell_name, cell_type)
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
         cell = self.get_netlist().get_cell_by_cell_key(cell_key)
         if None == cell:
             self.get_input().get_log().get_logger().warn(
@@ -387,7 +414,7 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, netlist.Type.INST_K)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
@@ -432,7 +459,7 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, inst_type)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
@@ -478,11 +505,11 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, inst_type)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
-        cell_key = self.get_netlist().get_cell_key(cell_name, cell_type)
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
         cell = self.get_netlist().get_cell_by_cell_key(cell_key)
         if None == cell:
             cell = netlist.Cell(cell_name, cell_type)
@@ -528,7 +555,7 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, inst_type)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
@@ -590,7 +617,7 @@ class Parser(run.Run):
             inst = netlist.Inst(inst_name, inst_type)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
@@ -600,10 +627,9 @@ class Parser(run.Run):
         cell = None
         #
         if netlist.Type.CELL_DIODE == cell_type:
-            cell_key = self.get_netlist().get_cell_key(cell_name, netlist.Type.CELL_DIODE)
+            cell_key = netlist.get_cell_key(cell_name, cell_type)
             cell = self.get_netlist().get_cell_by_cell_key(cell_key)
             if None == cell:
-                cell_key = self.get_netlist().get_cell_key(cell_name, netlist.Type.CELL_DIODE)
                 cell = netlist.Cell(cell_name, netlist.Type.CELL_DIODE)
                 self.get_netlist().add_cell(cell)
                 self.get_netlist().add_cell_key(cell_key)
@@ -613,12 +639,12 @@ class Parser(run.Run):
                 netlist.Type.CELL_BJT_PNP,
                 netlist.Type.CELL_BJT,
             ]:
-                cell_key = self.get_netlist().get_cell_key(cell_name, cell_type_t)
+                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
                 cell = self.get_netlist().get_cell_by_cell_key(cell_key)
                 if None != cell:
                     break
             if None == cell:
-                cell_key = self.get_netlist().get_cell_key(cell_name, netlist.Type.CELL_BJT)
+                cell_key = netlist.get_cell_key(cell_key, netlist.Type.CELL_BJT)
                 cell = netlist.Cell(cell_name, netlist.Type.CELL_BJT)
                 self.get_netlist().add_cell(cell)
                 self.get_netlist().add_cell_key(cell_key)
@@ -628,12 +654,12 @@ class Parser(run.Run):
                 netlist.Type.CELL_JFET_PJF,
                 netlist.Type.CELL_JFET,
             ]:
-                cell_key = self.get_netlist().get_cell_key(cell_name, cell_type_t)
+                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
                 cell = self.get_netlist().get_cell_by_cell_key(cell_key)
                 if None != cell:
                     break
             if None == cell:
-                cell_key = self.get_netlist().get_cell_key(cell_name, netlist.Type.CELL_JFET)
+                cell_key = netlist.get_cell_key(cell_name, netlist.Type.CELL_JFET)
                 cell = netlist.Cell(cell_name, netlist.Type.CELL_JFET)
                 self.get_netlist().add_cell(cell)
                 self.get_netlist().add_cell_key(cell_key)
@@ -643,12 +669,12 @@ class Parser(run.Run):
                 netlist.Type.CELL_MOSFET_PMOS,
                 netlist.Type.CELL_MOSFET,
             ]:
-                cell_key = self.get_netlist().get_cell_key(cell_name, cell_type_t)
+                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
                 cell = self.get_netlist().get_cell_by_cell_key(cell_key)
                 if None != cell:
                     break
             if None == cell:
-                cell_key = self.get_netlist().get_cell_key(cell_name, netlist.Type.CELL_MOSFET)
+                cell_key = netlist.get_cell_key(cell_name, netlist.Type.CELL_MOSFET)
                 cell = netlist.Cell(cell_name, netlist.Type.CELL_MOSFET)
                 self.get_netlist().add_cell(cell)
                 self.get_netlist().add_cell_key(cell_key)
@@ -680,58 +706,34 @@ class Parser(run.Run):
         inst_name = tokens[0]
         cur_cell = self.get_cur_cell()
         inst = cur_cell.get_inst(inst_name)
-        # inst = self.get_cur_cell().get_inst(inst_name)
         if None == inst:
             inst = netlist.Inst(inst_name, netlist.Type.INST_INST)
             self.get_cur_cell().add_inst(inst)
         else:
-            msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_cur_cell_name()})"
+            msg = f"# error: inst({inst_name}) is duplicate in cell({self.get_cur_cell_name()})"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
         #
-        parameter_start_pos = self.get_param_start_pos(tokens)
-        cell_name = tokens[parameter_start_pos - 1].lower()
+        params_start_pos = self.get_param_start_pos(tokens)
+        cell_pos = params_start_pos - 1
+        #
+        cell_name = tokens[cell_pos]
         cell_type = netlist.Type.CELL_CELL
-        cell = self.get_netlist().get_cell(cell_name, cell_type)
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
+        cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
         if None == cell:
-            for cell_type in netlist.get_subckt_types_set():
-                cell = self.get_netlist().get_cell(cell_name, cell_type)
-                if None != cell:
-                    break
+            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
             if None == cell:
+                msg = f"# error: inst({inst_name}) subckt({cell_name}) isnot exist"
                 self.get_input().get_log().get_logger().error(
                     f"{netlist.get_file_func_line_s(msg)}"
                 )
                 exit()
-        #
-        parameter_start_pos = self.get_param_start_pos(tokens)
-        cell_name = tokens[parameter_start_pos - 1].lower()
-        cell_type = netlist.Type.CELL_CELL
-        cell = self.get_netlist().get_cell(cell_name, cell_type)
-        if None == cell:
-            for cell_type in netlist.get_subckt_types_set():
-                cell = self.get_netlist().get_cell(cell_name, cell_type)
-                if None != cell:
-                    break
-            if None == cell:
-                msg = f"# error : inst({inst_name}) cell({cell_name}) isnot exist!"
-                self.get_input().get_log().get_logger().error(
-                    f"{netlist.get_file_func_line_s(msg)}"
-                )
-                exit()
-        #
-        inst.set_cell(cell)
-        #
-        for pos in range(1, parameter_start_pos - 1):
-            node_name = tokens[pos]
-            node = self.get_cur_cell().get_node(node_name)
-            if None == node:
-                node = netlist.Node(node_name, netlist.Type.NODE_NODE)
         #
         inst.set_cell(cell)
         cell.increase_inst_count()
         #
-        for pos in range(1, parameter_start_pos - 1):
+        for pos in range(1, cell_pos):
             node_name = tokens[pos]
             node = self.get_cur_cell().get_node(node_name)
             if None == node:
@@ -740,7 +742,7 @@ class Parser(run.Run):
             inst.add_node(node)
             node.add_inst(inst)
         #
-        self.read_params(inst, tokens, parameter_start_pos)
+        self.read_params(inst, tokens, params_start_pos)
 
     def get_param_start_pos(self, tokens):
         params_start_pos = len(tokens)

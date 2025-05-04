@@ -9,7 +9,8 @@ class Cell(Object):
         super().__init__(name, type)
         self.__node_dic = {}  # key : name, data : inst
         self.__inst_dic = {}  # key : name, data : node
-        self.__cell_dic = {}  # key : name, data : cell(model)
+        self.__cell_dic = {}  # key : cell_key, data : cell(model)
+        self.__cell_keys = []
         self.__pins = []
         self.__pin_set = set(self.__pins)
         self.__inst_names = []
@@ -74,8 +75,28 @@ class Cell(Object):
             self.__inst_dic[inst.get_name()] = inst
 
     def add_cell(self, cell):
-        if not cell.get_name() in self.__cell_dic:
-            self.__cell_dic[cell.get_name()] = cell
+        cell_key = get_cell_key(cell.get_name(), cell.get_type())
+        if not cell_key in self.__cell_dic:
+            self.__cell_dic[cell_key] = cell
+
+    def get_cell(self, cell_name, cell_type):
+        cell_key = get_cell_key(cell.get_name(), cell.get_type())
+        if cell_key in self.__cell_dic:
+            return self.__cell_dic[cell_key]
+        else:
+            return None
+
+    def get_cell_by_cell_key(self, cell_key):
+        if cell_key in self.__cell_dic:
+            return self.__cell_dic[cell_key]
+        else:
+            return None
+
+    def add_cell_key(self, cell_key):
+        self.__cell_keys.append(cell_key)
+
+    def get_cell_keys(self):
+        return self.__cell_keys
 
     def add_pin(self, pin):
         self.__pins.append(pin)

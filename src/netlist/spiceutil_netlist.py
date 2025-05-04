@@ -41,16 +41,13 @@ class Netlist:
             return None
 
     def get_cell(self, name, type):
-        cell_key = self.get_cell_key(name, type)
+        cell_key = get_cell_key(name, type)
         return self.get_cell_by_cell_key(cell_key)
 
     def add_cell(self, cell):
-        key = self.get_cell_key(cell.get_name(), cell.get_type())
-        if not key in self.__cell_dic:
-            self.__cell_dic[key] = cell
-
-    def get_cell_key(self, name, type):
-        return f"{name}{self.get_cell_key_delim()}{type.name}"
+        cell_key = get_cell_key(cell.get_name(), cell.get_type())
+        if not cell_key in self.__cell_dic:
+            self.__cell_dic[cell_key] = cell
 
     def split_cell_key(self, cell_key):
         tokens = cell_key.split(self.get_cell_key_delim())
@@ -77,27 +74,61 @@ class Netlist:
         self.__cell_keys.append(cell_key)
 
     def get_cell_summary_str(self):
-        s1 = f"---------------------------------\n"
+        s1 = self.get_cell_summary_str_global()
+        s1 += self.get_cell_summary_str_cells()
+        return s1
+
+    def get_cell_summary_str_global(self):
+        s1 = f"-----------------------------------------------------------------------------------------------------------------\n"
+        s1 += f"global\n"
+        s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
         s1 += f"{'key':40s}"
         s1 += f"{'#inst':>15s}"
         s1 += f"{'#node':>15s}"
         s1 += f"{'#pin':>15s}"
         s1 += f"{'#inst_count':>15s}\n"
-        s1 += f"---------------------------------\n"
+        s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
         for cell_key in self.get_cell_keys():
             cell = self.get_cell_by_cell_key(cell_key)
             if None == cell:
-                print(f"# debug: {cell_key}")
-                break
+                continue
             s1 += f"{cell_key:40s}"
             s1 += f"{len(cell.get_inst_dic()):15d}"
             s1 += f"{len(cell.get_node_dic()):15d}"
             s1 += f"{len(cell.get_pins()):15d}"
             s1 += f"{cell.get_inst_count():15d}\n"
-        s1 += f"---------------------------------\n"
-        for global_net_name in self.get_global_net_names_set():
-            s1 += f"global_net {global_net_name}\n"
-        s1 += f"---------------------------------\n"
+        s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
+        if 0 < len(self.get_global_net_names_set()):
+            for global_net_name in self.get_global_net_names_set():
+                s1 += f"global_net {global_net_name}\n"
+            s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
+        return s1
+
+    def get_cell_summary_str_cells(self):
+        s1 = f""
+        for cell_key in self.get_cell_keys():
+            cell = self.get_cell_by_cell_key(cell_key)
+            if None == cell:
+                continue
+            if 0 < len(cell.get_cell_dic()):
+                s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
+                s1 += f"local(from {cell.get_name()})\n"
+                s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
+                s1 += self.get_cell_summary_str_cell(cell)
+                s1 += f"-----------------------------------------------------------------------------------------------------------------\n"
+        return s1
+
+    def get_cell_summary_str_cell(self, cell):
+        s1 = f""
+        for cell_key in cell.get_cell_dic():
+            t_cell = cell.get_cell_by_cell_key(cell_key)
+            if None == t_cell:
+                break
+            s1 += f"{cell_key:40s}"
+            s1 += f"{len(t_cell.get_inst_dic()):15d}"
+            s1 += f"{len(t_cell.get_node_dic()):15d}"
+            s1 += f"{len(t_cell.get_pins()):15d}"
+            s1 += f"{t_cell.get_inst_count():15d}\n"
         return s1
 
 
