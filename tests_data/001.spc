@@ -11,8 +11,8 @@ $ 001.spc
 .model p pmos
 
 .subckt inv in out
-mn0 out in vss vss n l=100u w=200u
-mp0 out in vdd vdd p l=200u w=400u
+mn1 out in vss vss n l=100u w=200u
+mp1 out in vdd vdd p l=200u w=400u
 .ends
 
 r1 1 2 1

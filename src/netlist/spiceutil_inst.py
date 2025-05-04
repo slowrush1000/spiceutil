@@ -38,6 +38,7 @@ class Inst(Object):
 
     def get_info_str(self):
         s1 = f"name: {self.get_name()}"
+        s1 += f" type: {self.get_type()}"
         s1 += f" node:"
         for node in self.get_nodes():
             s1 += f" {node.get_name()}"

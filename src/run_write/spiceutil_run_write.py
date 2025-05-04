@@ -63,7 +63,10 @@ class Write(run.Run):
             if True == netlist.is_default_cell(t_cell.get_name(), t_cell.get_type()):
                 continue
             #
-            self.write_netlist_cell(file, t_cell, True)
+            if "*" == netlist.get_model_cell_name(t_cell.get_type()):
+                self.write_netlist_cell(file, t_cell, True)
+            else:
+                self.write_netlist_model(file, t_cell)
         #
         self.write_netlist_cell(file, default_top_cell, False)
 
@@ -90,6 +93,16 @@ class Write(run.Run):
             file.write(".ends\n")
         file.write("\n")
 
+    def write_netlist_model(self, file, cell):
+        model_line = f".model"
+        model_line += f" {cell.get_name()}"
+        model_line += f" {netlist.get_model_cell_name(cell.get_type())}"
+        for variable_name in cell.get_param().get_variable_names():
+            equation = cell.get_param().get_equation_dic()[variable_name]
+            model_line += f"  {variable_name}='{equation.get_s()}"
+        netlist.write_wrap_line(file, model_line)
+        file.write(f"\n")
+
     def get_instname_instnodes_line(self, inst_name, node_names, inst):
         s1 = f""
         if True == self.get_add_first_char():
@@ -101,21 +114,30 @@ class Write(run.Run):
         return s1
 
     def get_inst_line(self, inst_name, node_names, inst):
+        # print(f"# debug+++: yyy {inst.get_type()}")
         if None == inst:
-            return "* error: inst is None"
-        match inst.get_type():
-            case netlist.Type.INST_R, netlist.Type.INST_L, netlist.Type.INST_C:
-                return self.get_inst_line_rlc(inst_name, node_names, inst)
-            case netlist.Type.INST_K:
-                return self.get_inst_line_k(inst_name, node_names, inst)
-            case netlist.Type.INST_VS, netlist.Type.INST_CS:
-                return self.get_inst_line_vs_cs(inst_name, node_names, inst)
-            case netlist.Type.INST_VCVS, netlist.Type.INST_CCVS:
-                return self.get_inst_line_vcvs_ccvs(inst_name, node_names, inst)
-            case netlist.Type.INST_VCCS, netlist.Type.INST_CCCS:
-                return self.get_inst_line_vccs_cccs(inst_name, node_names, inst)
-            case _:
-                return self.get_inst_line_other(inst_name, node_names, inst)
+            return f"* error: inst is None"
+        #
+        if (
+            (netlist.Type.INST_R == inst.get_type())
+            or (netlist.Type.INST_C == inst.get_type())
+            or (netlist.Type.INST_L == inst.get_type())
+        ):
+            return self.get_inst_line_rlc(inst_name, node_names, inst)
+        elif netlist.Type.INST_K == inst.get_type():
+            return self.get_inst_line_k(inst_name, node_names, inst)
+        elif (netlist.Type.INST_VS == inst.get_type()) or (netlist.Type.INST_CS == inst.get_type()):
+            return self.get_inst_line_vs_cs(inst_name, node_names, inst)
+        elif (netlist.Type.INST_VCVS == inst.get_type()) or (
+            netlist.Type.INST_VCCS == inst.get_type()
+        ):
+            return self.get_inst_line_vcvs_vccs(inst_name, node_names, inst)
+        elif (netlist.Type.INST_CCVS == inst.get_type()) or (
+            netlist.Type.INST_CCCS == inst.get_type()
+        ):
+            return self.get_inst_line_ccvs_cccs(inst_name, node_names, inst)
+        else:
+            return self.get_inst_line_other(inst_name, node_names, inst)
 
     # rname n1 n2 value ...
     # rname n1 n2 model r=value ...
@@ -124,15 +146,22 @@ class Write(run.Run):
         inst_line = self.get_instname_instnodes_line(inst_name, node_names, inst)
         # r = value
         # value
-        cell_name = netlist.get_default_cell_name(inst.get_cell())
-        if not cell_name in ["r", "l", "c"]:
-            inst_line += f" {inst.get_cell().get_name()} {cell_name}="
-        if cell_name in inst.get_param().get_equation_dic():
-            equation = inst.get_param().get_equation_dic()[cell_name]
+        cell_name = inst.get_cell().get_name()
+        # print(f"# debug+++: {cell_name}")
+        if cell_name in ["r", "l", "c"]:
+            if cell_name in inst.get_param().get_equation_dic():
+                equation = inst.get_param().get_equation_dic()[cell_name]
             inst_line += f" '{equation.get_s()}'"
+        else:
+            inst_line += f" {cell_name}"
+            for variable_name in ["r", "l", "c"]:
+                if variable_name in inst.get_param().get_equation_dic():
+                    equation = inst.get_param().get_equation_dic()[variable_name]
+                    inst_line += f" {variable_name}='{equation.get_s()}'"
+                    break
         # ...
         for variable_name in inst.get_param().get_variable_names():
-            if "r" == variable_name:
+            if variable_name in ["r", "l", "c"]:
                 continue
             equation = inst.get_param().get_equation_dic()[variable_name]
             inst_line += f" {variable_name}='{equation.get_s()}'"
@@ -147,13 +176,16 @@ class Write(run.Run):
             inst_line += f" {inductor.get_name()}"
         # k = value
         # value
-        if "k" != inst.get_cell().get_name():
-            inst_line += f" {inst.get_cell().get_name()} k="
-        if "k" in inst.get_param().get_equation_dic():
-            equation = inst.get_param().get_equation_dic()["k"]
+        cell_name = inst.get_cell().get_name()
+        if cell_name in ["k"]:
+            if cell_name in inst.get_param().get_equation_dic():
+                equation = inst.get_param().get_equation_dic()[cell_name]
             inst_line += f" '{equation.get_s()}'"
         else:
-            inst_line += f" unknown"
+            inst_line += f" {cell_name} {cell_name}="
+            if cell_name in inst.get_param().get_equation_dic():
+                equation = inst.get_param().get_equation_dic()[cell_name]
+                inst_line += f"'{equation.get_s()}'"
         # ...
         for variable_name in inst.get_param().get_variable_names():
             if "k" == variable_name:
@@ -178,55 +210,31 @@ class Write(run.Run):
 
     # ename n1 n2 nc1 nc2 value
     # gname n1 n2 nc1 nc2 value
-    def get_inst_line_vcvs_ccvs(self, instname, nodenames, inst):
+    def get_inst_line_vcvs_vccs(self, instname, nodenames, inst):
         # ename n1 n2 nc1 nc2
         # gname n1 n2 nc1 nc2
         inst_line = self.get_instname_instnodes_line(instname, nodenames, inst)
         # value
-        if netlist.get_k_default_cellname_ccvs() in inst.get_equation_value_dic():
-            equation_value = inst.get_equation_value_dic()[netlist.get_k_default_cellname_ccvs()]
-            inst_line += f" '{equation_value.get_equation()}'"
-        # ...
-        for param_name in inst.get_param_names():
-            if netlist.get_k_default_cellname_ccvs() == param_name:
-                continue
-            equation_value = inst.get_equation_value_dic()[param_name]
-            inst_line += f" {param_name}='{equation_value.get_equation()}'"
+        cell_name = inst.get_cell().get_name()
+        if cell_name in ["e", "g"]:
+            equation = inst.get_param().get_equation_dic()[cell_name]
+            inst_line += f" '{equation.get_s()}'"
         return inst_line
 
     # hname n1 n2 vcontrol value
-    def get_inst_line_vccs(self, instname, nodenames, inst):
-        # ename n1 n2 nc1 nc2
-        inst_line = self.get_instname_instnodes_line(instname, nodenames, inst)
-        # value
-        if netlist.get_k_default_cellname_vccs() in inst.get_equation_value_dic():
-            equation_value = inst.get_equation_value_dic()[netlist.get_k_default_cellname_vccs()]
-            inst_line += f" '{equation_value.get_equation()}'"
-        # ...
-        for param_name in inst.get_param_names():
-            if netlist.get_k_default_cellname_vccs() == param_name:
-                continue
-            equation_value = inst.get_equation_value_dic()[param_name]
-            inst_line += f" {param_name}='{equation_value.get_equation()}'"
-        return inst_line
-
     # fname n1 n2 vcontrol value ...
-    def get_inst_line_vccs_cccs(self, instname, nodenames, inst):
+    def get_inst_line_ccvs_cccs(self, instname, nodenames, inst):
+        # print(f"# debug+++: {inst.get_info_str()}")
         # fname n1 n2
         inst_line = self.get_instname_instnodes_line(instname, nodenames, inst)
         # vcontrol
         for vcontrol in inst.get_insts():
             inst_line += f" {vcontrol.get_name()}"
         # value
-        if netlist.get_k_default_cellname_cccs() in inst.get_equation_value_dic():
-            equation_value = inst.get_equation_value_dic()[netlist.get_k_default_cellname_cccs()]
-            inst_line += f" '{equation_value.get_equation()}'"
-        # ...
-        for param_name in inst.get_param_names():
-            if netlist.get_k_default_cellname_cccs() == param_name:
-                continue
-            equation_value = inst.get_equation_value_dic()[param_name]
-            inst_line += f" {param_name}='{equation_value.get_equation()}'"
+        cell_name = inst.get_cell().get_name()
+        if cell_name in ["h", "f"]:
+            equation = inst.get_param().get_equation_dic()[cell_name]
+            inst_line += f" '{equation.get_s()}'"
         return inst_line
 
     # xname n1 n2 ... cell ...
@@ -234,11 +242,10 @@ class Write(run.Run):
     # dname n1 n2 cell ...
     # qname n1 n2 n3 cell ...
     def get_inst_line_other(self, inst_name, node_names, inst):
+        print(f"# debug+++: {inst.get_info_str()}")
         # xname n1 n2 ... nN
         inst_line = self.get_instname_instnodes_line(inst_name, node_names, inst)
         # cell
-        # print(f"{inst.get_name()} {inst.get_cell()}")
-        # print(f"{inst.get_cell().get_name()}")
         inst_line += f" {inst.get_cell().get_name()}"
         # ...
         for variable_name in inst.get_param().get_variable_names():

@@ -184,7 +184,7 @@ class Parser(run.Run):
                 nlines = nlines + 1
                 if 0 == (nlines % netlist.k_LINE_STEP()):
                     self.get_input().get_log().get_logger().info(
-                        f"    {nlines} lines ... {
+                        f"{nlines} lines ... {
                         datetime.datetime.now()}"
                     )
                 #
@@ -202,7 +202,7 @@ class Parser(run.Run):
                     total_line = line
         self.read_total_line_2nd(total_line, file_name)
         self.get_input().get_log().get_logger().info(
-            f"    {nlines} lines ... {
+            f"{nlines} lines ... {
             datetime.datetime.now()}"
         )
         self.get_input().get_log().get_logger().info(
@@ -362,20 +362,20 @@ class Parser(run.Run):
         # rname n1 n2 model r = value ...
         # lname n1 n2 model l = value ...
         # cname n1 n2 model c = value ...
-        print(f"# debug+++: {param_start_pos} {len(tokens)}")
+        # print(f"# debug+++: {param_start_pos} {len(tokens)}")
         if 4 == param_start_pos and 4 < len(tokens):
-            print(f"# debug+++: ++1")
+            # print(f"# debug+++: ++1")
             self.read_params(inst, tokens, param_start_pos)
         # rname n1 n2 value ...
         # lname n1 n2 value ...
         # cname n1 n2 value ...
         else:
-            print(f"# debug+++: ++2")
+            # print(f"# debug+++: ++2")
             variable_name = cell_name
             inst.get_param().add_equation(variable_name, tokens[3], 0.0)
             self.read_params(inst, tokens, 4)
         #
-        print(f"# debug+++: {inst.get_info_str()}")
+        # print(f"# debug+++: {inst.get_info_str()}")
 
     # kname inductor1 inductor2 value
 
@@ -502,6 +502,8 @@ class Parser(run.Run):
         #
         variable_name = cell_name
         inst.get_param().add_equation(variable_name, tokens[5], 0.0)
+        #
+        # print(f"# debug+++: {inst.get_info_str()}")
 
     # CCVS
     # Hname N1 N2 VControl value
@@ -593,7 +595,8 @@ class Parser(run.Run):
             exit()
         #
         param_start_pos = self.get_param_start_pos(tokens)
-        cell_name = tokens[param_start_pos - 1]
+        cell_pos = param_start_pos - 1
+        cell_name = tokens[cell_pos]
         cell = None
         #
         if netlist.Type.CELL_DIODE == cell_type:
@@ -660,7 +663,7 @@ class Parser(run.Run):
         inst.set_cell(cell)
         cell.increase_inst_count()
         #
-        for pos in range(1, param_start_pos):
+        for pos in range(1, cell_pos):
             node_name = tokens[pos]
             node = self.get_cur_cell().get_node(node_name)
             if None == node:
@@ -829,6 +832,9 @@ class Parser(run.Run):
         # self.get_input().get_log().get_logger().info(f"P{self.get_netlist().get_summary_str()}")
         if True == self.get_input().get_is_write_1st_spc():
             spc_1st_file_name = f"{self.get_input().get_output_prefix()}.1st.spc"
+            self.get_input().get_log().get_logger().info(
+                f"# write 1st spc file({spc_1st_file_name}) ... {datetime.datetime.now()}\n"
+            )
             my_write = run_write.Write(self.get_input(), self.get_netlist())
             my_write.set_file_name(spc_1st_file_name)
             my_write.run()
@@ -838,6 +844,9 @@ class Parser(run.Run):
         # self.get_netlist().print_info(self.get_input().get_log().get_logger())
         if True == self.get_input().get_is_write_2nd_spc():
             spc_2nd_file_name = f"{self.get_input().get_output_prefix()}.2nd.spc"
+            self.get_input().get_log().get_logger().info(
+                f"# write 2nd spc file({spc_2nd_file_name}) ... {datetime.datetime.now()}\n"
+            )
             my_write = run_write.Write(self.get_input(), self.get_netlist())
             my_write.set_file_name(spc_2nd_file_name)
             my_write.run()

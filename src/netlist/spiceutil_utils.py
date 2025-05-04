@@ -61,7 +61,7 @@ class Type(Enum):
 
 
 def is_cell_model(type):
-    k_CELLS = [
+    cells = [
         Type.CELL_DIODE,
         Type.CELL_BJT,
         Type.CELL_BJT_NPN,
@@ -73,8 +73,8 @@ def is_cell_model(type):
         Type.CELL_JFET_NJF,
         Type.CELL_JFET_PJF,
     ]
-    k_CELLS_SET = set(k_CELLS)
-    if type in k_CELLS_SET:
+    cell_set = set(cells)
+    if type in cell_set:
         return True
     else:
         return False
@@ -136,6 +136,12 @@ def is_default_cell(cell_name, cell_type):
 
 def get_model_cell_type(model_type_str):
     match (model_type_str):
+        case "r":
+            return Type.CELL_R
+        case "l":
+            return Type.CELL_L
+        case "c":
+            return Type.CELL_C
         case "d":
             return Type.CELL_DIODE
         case "npn":
@@ -152,6 +158,32 @@ def get_model_cell_type(model_type_str):
             return Type.CELL_JFET_PJF
         case _:
             return Type.INIT
+
+
+def get_model_cell_name(model_type):
+    match (model_type):
+        case Type.CELL_R:
+            return "r"
+        case Type.CELL_C:
+            return "c"
+        case Type.CELL_L:
+            return "l"
+        case Type.CELL_DIODE:
+            return "d"
+        case Type.CELL_BJT_NPN:
+            return "npn"
+        case Type.CELL_BJT_PNP:
+            return "pnp"
+        case Type.CELL_MOSFET_NMOS:
+            return "nmos"
+        case Type.CELL_MOSFET_PMOS:
+            return "pmos"
+        case Type.CELL_JFET_NJF:
+            return "njf"
+        case Type.CELL_JFET_PJF:
+            return "pjf"
+        case _:
+            return "*"
 
 
 def k_SUBCKT_MODEL_SET():
