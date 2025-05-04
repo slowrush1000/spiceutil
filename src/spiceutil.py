@@ -18,13 +18,13 @@ import version
 
 class Spiceutil:
     def __init__(self):
-        self.m_input = input.Input()
+        self.__input = input.Input()
 
     def set_input(self, input_t):
-        self.m_input = input_t
+        self.__input = input_t
 
     def get_input(self):
-        return self.m_input
+        return self.__input
 
     def print_usage(self):
         print(f"{version.Version().get_program()} {version.Version().get_version()}")
@@ -38,40 +38,50 @@ class Spiceutil:
         self.get_input().set_output_prefix(args[1])
 
     def init_log(self):
+        print(f"# init log start ... {datetime.datetime.now()}")
         my_log = log.Log(self.get_input().get_output_prefix())
         self.get_input().set_log(my_log)
+        print(f"# init log end ... {datetime.datetime.now()}")
 
     def print_input(self):
-        self.get_input().get_log().get_logger().info(f"# print input start ... {datetime.datetime.now()}")
+        self.get_input().get_log().get_logger().info(
+            f"# print input start ... {datetime.datetime.now()}"
+        )
         self.get_input().get_log().get_logger().info(f"{self.get_input().get_str()}")
-        self.get_input().get_log().get_logger().info(f"# print input end ... {datetime.datetime.now()}\n")
+        self.get_input().get_log().get_logger().info(
+            f"# print input end ... {datetime.datetime.now()}\n"
+        )
 
     def read_args(self, args):
-        self.get_input().get_log().get_logger().info(f"# read args start ... {datetime.datetime.now()}")
+        self.get_input().get_log().get_logger().info(
+            f"# read args start ... {datetime.datetime.now()}"
+        )
         if 3 != len(args):
             self.print_usage()
             exit()
         self.get_input().set_output_prefix(args[1])
-        self.get_input().set_config_filename(args[2])
+        self.get_input().set_config_file_name(args[2])
         self.get_input().set_args(args)
-        self.get_input().get_log().get_logger().info(f"# read args end ... {datetime.datetime.now()}\n")
+        self.get_input().get_log().get_logger().info(
+            f"# read args end ... {datetime.datetime.now()}\n"
+        )
 
     def read_config_file(self):
         self.get_input().get_log().get_logger().info(
-            f"# read config file({self.get_input().get_config_filename()}) start ... {datetime.datetime.now()}"
+            f"# read config file({self.get_input().get_config_file_name()}) start ... {datetime.datetime.now()}"
         )
         #
-        with open(self.get_input().get_config_filename(), "rb") as config_file:
+        with open(self.get_input().get_config_file_name(), "rb") as config_file:
             config = tomllib.load(config_file)
             #
             if "run" in config:
                 self.get_input().set_run(config["run"])
             if "spice_file" in config:
-                self.get_input().set_spice_filename(config["spice_file"])
+                self.get_input().set_spice_file_name(config["spice_file"])
             if "top_cell" in config:
-                self.get_input().set_top_cellname(config["top_cell"])
+                self.get_input().set_top_cell_name(config["top_cell"])
             if "netnames" in config:
-                self.get_input().set_netnames(config["netnames"].split())
+                self.get_input().set_net_names(config["netnames"].split())
             if "casesensitive" in config:
                 self.get_input().set_casesensitive(config["casesensitive"])
             if "dolar_comment" in config:
@@ -88,10 +98,10 @@ class Spiceutil:
             if "text_width" in config:
                 self.get_input().set_text_width(int(config["text_width"]))
             if "flatten_delimiter" in config:
-                self.get_input().set_flatten_delimiter(config["flatten_delimiter"])
+                self.get_input().set_flatten_delim(config["flatten_delimiter"])
         #
         self.get_input().get_log().get_logger().info(
-            f"# read config file({self.get_input().get_config_filename()}) end ... {datetime.datetime.now()}\n"
+            f"# read config file({self.get_input().get_config_file_name()}) end ... {datetime.datetime.now()}\n"
         )
 
     def run(self, args):

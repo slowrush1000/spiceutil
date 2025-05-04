@@ -3,9 +3,7 @@ import sys
 import os
 import logging
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src"
-)
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src")
 import log
 import run_parser
 import run_findvnet
@@ -13,8 +11,10 @@ from spiceutil import Spiceutil
 
 
 def test_001_config():
-    output_prefix = "tests_result/test_001_config"
-    filename = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/tests_data/test_001_config.toml"
+    output_prefix = "test_001_config"
+    filename = (
+        f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/tests/test_001_config.toml"
+    )
     args = f"spiceutil.py {output_prefix} {filename}"
     my_spiceutil = Spiceutil()
     my_spiceutil.run(args.split())

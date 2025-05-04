@@ -1,21 +1,35 @@
 {
-    "python.poetryPath": "/bin/python3",
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}/src",
-        "${workspaceFolder}/src/input",
-        "${workspaceFolder}/src/log",
-        "${workspaceFolder}/src/netlist",
-        "${workspaceFolder}/src/run",
-        "${workspaceFolder}/src/run_findvnet",
-        "${workspaceFolder}/src/run_makeiprobe",
-        "${workspaceFolder}/src/run_parser",
-        "${workspaceFolder}/src/version",
+//    "python.poetryPath": "/bin/python3",
+    "python.poetryPath": "/home/yh1000/anaconda3/bin/python3",
+    "python.pythonPath": "/home/yh1000/anaconda3/bin/python3",
+    "python.analysis.extraPaths" : [
+        "./src",
+        "./src/input",
+        "./src/log",
+        "./src/netlist",
+        "./src/run",
+        "./src/run_findvnet",
+        "./src/run_makeiprobe",
+        "./src/run_parser",
+        "./src/run_write",
+        "./src/version",
     ],
+//    "python.analysis.extraPaths": [
+//        "${workspaceFolder}/src",
+//        "${workspaceFolder}/src/input",
+//        "${workspaceFolder}/src/log",
+//        "${workspaceFolder}/src/netlist",
+//        "${workspaceFolder}/src/run",
+//        "${workspaceFolder}/src/run_findvnet",
+//        "${workspaceFolder}/src/run_makeiprobe",
+//        "${workspaceFolder}/src/run_parser",
+//        "${workspaceFolder}/src/version",
+//    ],
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true
     },
     "black-formatter.args": [
-        "--line-length", "119"
+        "--line-length", "100"
     ],
 }

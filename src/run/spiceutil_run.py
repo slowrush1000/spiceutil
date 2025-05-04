@@ -1,10 +1,9 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import input
 import netlist
-import run_parser
 
 
 class Run:
@@ -23,8 +22,3 @@ class Run:
 
     def get_netlist(self):
         return self.m_netlist
-
-    def run_parser(self):
-        my_parser = run_parser.Parser(self.get_input(), self.get_netlist())
-        my_parser.run()
-        self.set_netlist(my_parser.get_netlist())

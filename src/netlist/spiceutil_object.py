@@ -1,27 +1,22 @@
 from .spiceutil_utils import Type
 
 
+# name : public 변수
+# _name : protected 변수
+# __name : private 변수
 class Object:
-    def __init__(self, name="", type=Type.INIT, selected=False):
-        super().__init__()
-        self.m_name = name
-        self.m_type = type
-        self.m_selected = selected
+    def __init__(self, name="", type=Type.INIT):
+        self.__name = name
+        self.__type = type
 
     def set_name(self, name):
-        self.m_name = name
+        self.__name = name
 
     def get_name(self):
-        return self.m_name
+        return self.__name
 
     def set_type(self, type):
-        self.m_type = type
+        self.__type = type
 
     def get_type(self):
-        return self.m_type
-
-    def set_selected(self, selected):
-        self.m_selected = selected
-
-    def get_selected(self):
-        return self.m_selected
+        return self.__type

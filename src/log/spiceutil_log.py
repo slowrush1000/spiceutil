@@ -4,12 +4,12 @@ import logging
 class Log:
     def __init__(self, output_prefix=""):
         #
-        self.m_filename = f"{output_prefix}.log"
-        self.m_logger = logging.getLogger(self.m_filename)
+        self.m_file_name = f"{output_prefix}.log"
+        self.m_logger = logging.getLogger(self.m_file_name)
         self.m_logger.setLevel(logging.INFO)
         #
         stream_handler = logging.StreamHandler()
-        file_handler = logging.FileHandler(self.m_filename, mode="w")
+        file_handler = logging.FileHandler(self.m_file_name, mode="w")
         #
         # formatter = logging.Formatter("%(asctime)s %(message)s")
         # stream_handler.setFormatter(formatter)

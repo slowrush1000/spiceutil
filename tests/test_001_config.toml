@@ -14,4 +14,4 @@ dollar_comment  = false
 is_write_1st_spc    = true
 is_write_2nd_spc    = true
 log_verbose     = "DEBUG"
-text_width      = 120
+text_width      = 100
