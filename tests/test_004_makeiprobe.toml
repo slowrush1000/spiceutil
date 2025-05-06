@@ -1,5 +1,5 @@
 # test_003_findvnet
-run                 = "makeiprobe"
+runmode             = "makeiprobe"
 spice_file          = "tests_data/004.spc"
 #top_cell           = "top_cell"
 netnames            = "vdd vss"

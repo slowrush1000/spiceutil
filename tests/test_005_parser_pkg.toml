@@ -1,5 +1,5 @@
 # test_003_findvnet
-run                 = "parser"
+runmode             = "parser"
 spice_file          = "tests_data/005_pkg.spc"
 #top_cell           = "top_cell"
 #netnames            = "vdd vss vddq vssq"

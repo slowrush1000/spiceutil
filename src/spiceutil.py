@@ -41,7 +41,8 @@ class Spiceutil:
         print(f"# init log start ... {datetime.datetime.now()}")
         my_log = log.Log(self.get_input().get_output_prefix())
         self.get_input().set_log(my_log)
-        print(f"# init log end ... {datetime.datetime.now()}")
+        self.get_input().set_log_file_name(self.get_input().get_log().get_file_name())
+        print(f"# init log end ... {datetime.datetime.now()}\n")
 
     def print_input(self):
         self.get_input().get_log().get_logger().info(
@@ -74,8 +75,18 @@ class Spiceutil:
         with open(self.get_input().get_config_file_name(), "rb") as config_file:
             config = tomllib.load(config_file)
             #
-            if "run" in config:
-                self.get_input().set_run(config["run"])
+            if "runmode" in config:
+                t_runmode = config["runmode"]
+                runmode = netlist.get_runmode(t_runmode)
+                print(f"# debug+++: {t_runmode} {runmode}")
+                if netlist.Runmode.INIT != runmode:
+                    self.get_input().set_runmode(runmode)
+                else:
+                    msg = f"# error: runmode({t_runmode}) isnot defined! runmode must set in {' '.join(netlist.get_runmode_keys())}"
+                    self.get_input().get_log().get_logger().error(
+                        f"{netlist.get_file_func_line_s(msg)}"
+                    )
+                    exit()
             if "spice_file" in config:
                 self.get_input().set_spice_file_name(config["spice_file"])
             if "top_cell" in config:
@@ -99,6 +110,8 @@ class Spiceutil:
                 self.get_input().set_text_width(int(config["text_width"]))
             if "flatten_delimiter" in config:
                 self.get_input().set_flatten_delim(config["flatten_delimiter"])
+            if "malias" in config:
+                self.get_input().set_malias(config["malias"])
         #
         self.get_input().get_log().get_logger().info(
             f"# read config file({self.get_input().get_config_file_name()}) end ... {datetime.datetime.now()}\n"
@@ -117,27 +130,29 @@ class Spiceutil:
         self.read_config_file()
         self.print_input()
         #
-        match self.get_input().get_run():
-            case "config":
+        match self.get_input().get_runmode():
+            case netlist.Runmode.CONFIG:
                 pass
-            case "parser":
+            case netlist.Runmode.PARSER:
                 my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
-            case "findvnet":
+            case netlist.Runmode.FINDVNET:
                 my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
                 my_findvnet = run_findvnet.Findvnet(self.get_input(), my_parser.get_netlist())
                 my_findvnet.run()
-            case "makeiprobe":
+            case netlist.Runmode.MAKEIPROBE:
                 my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
                 my_makeiprobe = run_makeiprobe.Makeiprobe(self.get_input(), my_parser.get_netlist())
                 my_makeiprobe.run()
-            case "flatten":
+            case netlist.Runmode.FLATTEN:
                 my_parser = run_parser.Parser(self.get_input(), netlist.Netlist())
                 my_parser.run()
                 my_flatten = run_flatten.flatten(self.get_input(), my_parser.get_netlist())
                 my_flatten.run()
+            case _:
+                pass
         #
         self.get_input().get_log().get_logger().info(
             f"# {version.Version().get_program()} {version.Version().get_version()} end ... {datetime.datetime.now()}\n"

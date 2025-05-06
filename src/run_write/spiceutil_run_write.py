@@ -102,7 +102,7 @@ class Write(run.Run):
             equation = cell.get_param().get_equation_dic()[variable_name]
             model_line += f"  {variable_name}='{equation.get_s()}"
         netlist.write_wrap_line(file, model_line)
-        file.write(f"\n")
+        file.write(f"\n\n")
 
     def get_instname_instnodes_line(self, inst_name, node_names, inst):
         s1 = f""

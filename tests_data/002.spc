@@ -2,11 +2,12 @@ $ 002.spc
 
 .model n nmos
 .model p pmos
-.model d d
+.model dd d
 .model qn npn
 .model qp pnp
 .model jn njf
 .model jp pjf
+.model resstar r
 
 .subckt ns d g s b
 .model ns nmos
@@ -44,8 +45,8 @@ g1 7 8 2 3  1000
 h1 8 9 vdd 10000
 f1 9 10 vdd 100000
 d1 10 11 dd l=100u w=200u
-qn1 11 12 vss qqn l=100u w=200u
-qp1 14 15 vdd qqp l=200u w=400u
+qn1 11 12 vss qn l=100u w=200u
+qp1 14 15 vdd qp l=200u w=400u
 jn1 20 21 vss jn l=10u w=20u
 jp1 22 23 vdd jp l=30u w=40u
 mn0 100 101 vss vss n l=100u w=200u

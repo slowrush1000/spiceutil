@@ -17,7 +17,7 @@ class Findvnet(run.Run):
 
     def findvnet(self):
         self.get_input().get_log().get_logger().info(
-            f"# findvnet start ... {datetime.datetime.now()}"
+            f"# findvnet start ... {datetime.datetime.now()}\n"
         )
         top_cell = self.get_netlist().get_cell(
             self.get_input().get_top_cell_name(), netlist.Type.CELL_CELL
@@ -28,22 +28,23 @@ class Findvnet(run.Run):
             exit()
         #
         for net_name in self.get_input().get_net_names():
-            #
-            net_result_str = []
-            #
             self.get_input().get_log().get_logger().info(
                 f"findvnet({net_name}) start ... {
                 datetime.datetime.now()}"
             )
+            #
             parent_pin_names = []
             for pos in range(0, len(top_cell.get_pins())):
                 pin = top_cell.get_pin(pos)
                 parent_pin_names.append(pin.get_name())
-            self.find_vnet_recursive(top_cell, net_result_str, net_name, "", parent_pin_names, 0)
-            self.write_findvnet_file(net_name, net_result_str)
+            #
+            net_result_dic = {}  # key : net_name(local), data : net_name(full)'s set
+            #
+            self.find_vnet_recursive(top_cell, net_result_dic, net_name, "", parent_pin_names, 0)
+            #
+            self.write_findvnet_file(net_name, net_result_dic)
             self.get_input().get_log().get_logger().info(
-                f"findvnet({net_name}) end ... {
-               datetime.datetime.now()}"
+                f"findvnet({net_name}) end ... {datetime.datetime.now()}\n"
             )
         #
         self.get_input().get_log().get_logger().info(
@@ -53,7 +54,7 @@ class Findvnet(run.Run):
     def find_vnet_recursive(
         self,
         parent_cell,
-        net_result_str,
+        net_result_dic,
         net_name,
         parent_inst_name,
         parent_pin_names,
@@ -61,7 +62,6 @@ class Findvnet(run.Run):
     ):
         for inst_name in parent_cell.get_inst_dic():
             inst = parent_cell.get_inst_dic()[inst_name]
-            #
             inst_name_1 = inst.get_name()
             if 0 < level:
                 inst_name_1 = f"{parent_inst_name}.{inst.get_name()}"
@@ -87,46 +87,56 @@ class Findvnet(run.Run):
                         parent_pin_names_1[pos] = node_name_1
             #
             for pos in range(0, len(inst.get_nodes())):
-                node = inst.get_node(pos)
-                net_name_1 = netlist.get_net_name(parent_pin_names_1[pos])
-                if net_name.lower() == net_name_1.lower():
-                    net_result_str.append(f"{net_name} {parent_pin_names_1[pos]}")
-                    self.get_input().get_log().get_logger().debug(
-                        f"#debug- {pos} {parent_inst_name}.{inst.get_name()} {node.get_name()} {parent_pin_names_1[pos]}"
-                    )
-                pos += 1
+                net_name_local = netlist.get_net_name(parent_pin_names_1[pos])
+                if True == netlist.is_equal(
+                    net_name, net_name_local, self.get_input().get_casesensitive()
+                ):
+                    #
+                    if not net_name_local in net_result_dic:
+                        net_name_full_set = set([parent_pin_names_1[pos]])
+                        net_result_dic[net_name_local] = net_name_full_set
+                    else:
+                        net_name_full_set = net_result_dic[net_name_local]
+                        if not parent_pin_names_1[pos] in net_name_full_set:
+                            net_name_full_set.add(parent_pin_names_1[pos])
+                    #
             #
             cell = inst.get_cell()
             self.find_vnet_recursive(
                 cell,
-                net_result_str,
+                net_result_dic,
                 net_name,
                 inst_name_1,
                 parent_pin_names_1,
                 level + 1,
             )
 
-    def write_findvnet_file(self, net_name, net_result_str):
-        net_result_str_set = set(net_result_str)
-        net_result_str_1 = list(net_result_str_set)
-        probe_filename = f"{self.get_input().get_output_prefix()}.{net_name}.findvnet.txt"
-        self.get_input().get_log().get_logger().info(f"vnet file : {probe_filename}")
-        probe_file = open(probe_filename, "wt")
-        probe_file.write(
+    def write_findvnet_file(self, net_name, net_result_dic):
+        findvnet_file_name = f"{self.get_input().get_output_prefix()}.{net_name}.findvnet.txt"
+        #
+        self.get_input().get_log().get_logger().info(f"vnet file : {findvnet_file_name}")
+        findvnet_file = open(findvnet_file_name, "wt")
+        #
+        findvnet_file.write(
             f"* {version.Version().get_program()} - {version.Version().get_version()}\n"
         )
-        probe_file.write(f"* {self.get_input().get_run()} - {datetime.datetime.now()}\n")
-        probe_file.write(f"* net : {net_name}\n")
-        for net_result in net_result_str_1:
-            probe_file.write(f"{net_result}\n")
-        probe_file.write(f"*\n")
-        probe_file.close()
+        findvnet_file.write(f"* {self.get_input().get_run()} - {datetime.datetime.now()}\n")
+        findvnet_file.write(f"* net : {net_name}\n")
+        findvnet_file.write(f"* net_name net_name(local) net_name(full)\n")
+        #
+        for net_name_local in net_result_dic:
+            net_name_fulls = net_result_dic[net_name_local]
+            for net_name_full in net_name_fulls:
+                findvnet_file.write(f"{net_name} {net_name_local} {net_name_full}\n")
+        #
+        findvnet_file.write(f"*\n")
+        findvnet_file.close()
 
     def run(self):
-        self.get_input().get_log().get_logger().info(
-            f"# findvnet start ... {datetime.datetime.now()}\n"
-        )
+        # self.get_input().get_log().get_logger().info(
+        #    f"# findvnet start ... {datetime.datetime.now()}\n"
+        # )
         self.findvnet()
-        self.get_input().get_log().get_logger().info(
-            f"# findvnet end ... {datetime.datetime.now()}\n"
-        )
+        # self.get_input().get_log().get_logger().info(
+        #    f"# findvnet end ... {datetime.datetime.now()}\n"
+        # )

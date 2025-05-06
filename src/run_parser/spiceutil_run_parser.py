@@ -125,27 +125,7 @@ class Parser(run.Run):
     def read_total_line_1st_subckt_line(self, tokens):
         cell_name = tokens[1]
         cell_type = netlist.Type.CELL_CELL
-        cell_key = netlist.get_cell_key(cell_name, cell_type)
-        # global
-        if netlist.k_DEFAULT_TOP_CELL_NAME() == self.get_cur_cell_name():
-            print(f"# debug+++: global {tokens} {self.get_cur_cell_name()}")
-            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-            if None == cell:
-                cell = netlist.Cell(cell_name, cell_type)
-                self.get_netlist().add_cell(cell)
-                self.get_netlist().add_cell_key(cell_key)
-            self.set_cur_cell(cell)
-            self.set_cur_cell_name(cell_name)
-        # local
-        else:
-            print(f"# debug+++: local {tokens}")
-            cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
-            if None == cell:
-                cell = netlist.Cell(cell_name, cell_type)
-                self.get_cur_cell().add_cell(cell)
-                self.get_cur_cell().add_cell_key(cell_key)
-            self.set_cur_cell(cell)
-            self.set_cur_cell_name(cell_name)
+        self.add_cell_model_1st(cell_name, cell_type)
 
     # .ends
     def read_total_line_1st_ends_line(self):
@@ -160,24 +140,7 @@ class Parser(run.Run):
             msg = f"# error: model name({model_name}) model type({model_type}) is unknown!"
             self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
             exit()
-        #
-        model_key = netlist.get_cell_key(model_name, model_type)
-        # global
-        if netlist.k_DEFAULT_TOP_CELL_NAME() == self.get_cur_cell_name():
-            print(f"# debug+++: global {tokens} {self.get_cur_cell_name()}")
-            model = self.get_netlist().get_cell_by_cell_key(model_key)
-            if None == model:
-                model = netlist.Cell(model_name, model_type)
-                self.get_netlist().add_cell(model)
-                self.get_netlist().add_cell_key(model_key)
-        # local
-        else:
-            print(f"# debug+++: local {tokens} {self.get_cur_cell_name()}")
-            model = self.get_cur_cell().get_cell_by_cell_key(model_key)
-            if None == model:
-                model = netlist.Cell(model_name, model_type)
-                self.get_cur_cell().add_cell(model)
-                self.get_cur_cell().add_cell_key(model_key)
+        self.add_cell_model_1st(model_name, model_type)
 
     def read_total_line_1st_include_line(self, tokens, file_name):
         t_file_name = tokens[1].replace('"', "").replace("'", "")
@@ -268,9 +231,6 @@ class Parser(run.Run):
             or ("j" == tokens[0][0].lower())
         ):
             self.read_total_line_2nd_semiconductor_device_line(tokens)
-        #            self.read_total_line_2nd_mosfet_line(tokens)
-        #            self.read_total_line_2nd_bjt_line(tokens)
-        #            self.read_total_line_2nd_jfet_line(tokens)
         elif "x" == tokens[0][0].lower():
             self.read_total_line_2nd_inst_line(tokens)
 
@@ -279,9 +239,9 @@ class Parser(run.Run):
         cell_name = tokens[1]
         cell_type = netlist.Type.CELL_CELL
         cell_key = netlist.get_cell_key(cell_name, cell_type)
-        cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
+        cell = self.get_netlist().get_cell_by_cell_key(cell_key)
         if None == cell:
-            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+            cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
             if None == cell:
                 msg = f"cell({cell_name}) dont exist!"
                 self.get_input().get_log().get_logger().error(
@@ -339,15 +299,8 @@ class Parser(run.Run):
         #
         inst_type = netlist.Type.INIT
         cell_type = netlist.Type.INIT
-        if "r" == tokens[0][0]:
-            inst_type = netlist.Type.INST_R
-            cell_type = netlist.Type.CELL_R
-        elif "l" == tokens[0][0]:
-            inst_type = netlist.Type.INST_L
-            cell_type = netlist.Type.CELL_L
-        elif "c" == tokens[0][0]:
-            inst_type = netlist.Type.INST_C
-            cell_type = netlist.Type.CELL_C
+        #
+        inst_type, cell_type = netlist.get_inst_type_cell_type(tokens[0][0].lower())
         cell_name = tokens[0][0].lower()
         #
         inst_name = tokens[0]
@@ -365,15 +318,28 @@ class Parser(run.Run):
         if 4 == param_start_pos and 4 < len(tokens):
             cell_name = tokens[param_start_pos - 1]
         # rname n1 n2 value
-        cell_key = netlist.get_cell_key(cell_name, cell_type)
-        cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-        if None == cell:
-            self.get_input().get_log().get_logger().warn(
-                f"# warn: because model({cell_name}) isnot exist, so model({cell_name}) is generated!"
-            )
-            cell = netlist.Cell(cell_name, cell_type)
-            self.get_netlist().add_cell(cell)
-            self.get_netlist().add_cell_key(cell_key)
+        k_cells = [netlist.Type.CELL_R, netlist.Type.CELL_C, netlist.Type.CELL_L]
+        cell = self.get_cell_from_local_global(
+            inst_name, cell_name, k_cells, self.get_input().get_malias()
+        )
+        # cell_key = netlist.get_cell_key(cell_name, cell_type)
+        #        cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+        #        if None == cell:
+        #            if True == self.get_input().get_malias():
+        #                self.get_input().get_log().get_logger().warn(
+        #                    f"# warn: because model({cell_name}) isnot exist, so model({cell_name}) is generated!"
+        #                )
+        #                cell = netlist.Cell(cell_name, cell_type)
+        #                self.get_netlist().add_cell(cell)
+        #                self.get_netlist().add_cell_key(cell_key)
+        #            else:
+        #                msg = (
+        #                    f"# error: inst({inst_name}) is duplicate in subckt({self.get_cur_cell_name()})"
+        #                )
+        #                self.get_input().get_log().get_logger().error(
+        #                    f"{netlist.get_file_func_line_s(msg)}"
+        #                )
+        #                exit()
         inst.set_cell(cell)
         cell.increase_inst_count()
         #
@@ -443,14 +409,7 @@ class Parser(run.Run):
 
     def read_total_line_2nd_vs_cs_line(self, tokens):
         #
-        inst_type = netlist.Type.INIT
-        cell_type = netlist.Type.INIT
-        if "v" == tokens[0][0]:
-            inst_type = netlist.Type.INST_VS
-            cell_type = netlist.Type.CELL_VS
-        elif "i" == tokens[0][0]:
-            inst_type = netlist.Type.INST_CS
-            cell_type = netlist.Type.CELL_CS
+        inst_type, cell_type = netlist.get_inst_type_cell_type(tokens[0][0].lower())
         cell_name = tokens[0][0].lower()
         #
         inst_name = tokens[0]
@@ -489,14 +448,7 @@ class Parser(run.Run):
 
     def read_total_line_2nd_vcvs_vccs_line(self, tokens):
         #
-        inst_type = netlist.Type.INIT
-        cell_type = netlist.Type.INIT
-        if "e" == tokens[0][0]:
-            inst_type = netlist.Type.INST_VCVS
-            cell_type = netlist.Type.CELL_VCVS
-        elif "g" == tokens[0][0]:
-            inst_type = netlist.Type.INST_VCCS
-            cell_type = netlist.Type.CELL_VCCS
+        inst_type, cell_type = netlist.get_inst_type_cell_type(tokens[0][0].lower())
         cell_name = tokens[0][0].lower()
         #
         inst_name = tokens[0]
@@ -539,14 +491,7 @@ class Parser(run.Run):
 
     def read_total_line_2nd_ccvs_cccs_line(self, tokens):
         #
-        inst_type = netlist.Type.INIT
-        cell_type = netlist.Type.INIT
-        if "h" == tokens[0][0]:
-            inst_type = netlist.Type.INST_CCVS
-            cell_type = netlist.Type.CELL_CCVS
-        elif "f" == tokens[0][0]:
-            inst_type = netlist.Type.INST_CCCS
-            cell_type = netlist.Type.CELL_CCCS
+        inst_type, cell_type = netlist.get_inst_type_cell_type(tokens[0][0].lower())
         cell_name = tokens[0][0].lower()
         #
         inst_name = tokens[0]
@@ -595,20 +540,7 @@ class Parser(run.Run):
 
     def read_total_line_2nd_semiconductor_device_line(self, tokens):
         #
-        inst_type = netlist.Type.INIT
-        cell_type = netlist.Type.INIT
-        if "d" == tokens[0][0].lower():
-            inst_type = netlist.Type.INST_DIODE
-            cell_type = netlist.Type.CELL_DIODE
-        elif "j" == tokens[0][0].lower():
-            inst_type = netlist.Type.INST_JFET
-            cell_type = netlist.Type.CELL_JFET
-        elif "q" == tokens[0][0].lower():
-            inst_type = netlist.Type.INST_BJT
-            cell_type = netlist.Type.CELL_BJT
-        elif "m" == tokens[0][0].lower():
-            inst_type = netlist.Type.INST_MOSFET
-            cell_type = netlist.Type.CELL_MOSFET
+        inst_type, cell_type = netlist.get_inst_type_cell_type(tokens[0][0].lower())
         cell_name = tokens[0][0].lower()
         #
         inst_name = tokens[0]
@@ -624,67 +556,7 @@ class Parser(run.Run):
         param_start_pos = self.get_param_start_pos(tokens)
         cell_pos = param_start_pos - 1
         cell_name = tokens[cell_pos]
-        cell = None
-        #
-        if netlist.Type.CELL_DIODE == cell_type:
-            cell_key = netlist.get_cell_key(cell_name, cell_type)
-            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-            if None == cell:
-                cell = netlist.Cell(cell_name, netlist.Type.CELL_DIODE)
-                self.get_netlist().add_cell(cell)
-                self.get_netlist().add_cell_key(cell_key)
-        elif netlist.Type.CELL_BJT == cell_type:
-            for cell_type_t in [
-                netlist.Type.CELL_BJT_NPN,
-                netlist.Type.CELL_BJT_PNP,
-                netlist.Type.CELL_BJT,
-            ]:
-                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
-                cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-                if None != cell:
-                    break
-            if None == cell:
-                cell_key = netlist.get_cell_key(cell_key, netlist.Type.CELL_BJT)
-                cell = netlist.Cell(cell_name, netlist.Type.CELL_BJT)
-                self.get_netlist().add_cell(cell)
-                self.get_netlist().add_cell_key(cell_key)
-        elif netlist.Type.CELL_JFET == cell_type:
-            for cell_type_t in [
-                netlist.Type.CELL_JFET_NJF,
-                netlist.Type.CELL_JFET_PJF,
-                netlist.Type.CELL_JFET,
-            ]:
-                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
-                cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-                if None != cell:
-                    break
-            if None == cell:
-                cell_key = netlist.get_cell_key(cell_name, netlist.Type.CELL_JFET)
-                cell = netlist.Cell(cell_name, netlist.Type.CELL_JFET)
-                self.get_netlist().add_cell(cell)
-                self.get_netlist().add_cell_key(cell_key)
-        elif netlist.Type.CELL_MOSFET == cell_type:
-            for cell_type_t in [
-                netlist.Type.CELL_MOSFET_NMOS,
-                netlist.Type.CELL_MOSFET_PMOS,
-                netlist.Type.CELL_MOSFET,
-            ]:
-                cell_key = netlist.get_cell_key(cell_name, cell_type_t)
-                cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-                if None != cell:
-                    break
-            if None == cell:
-                cell_key = netlist.get_cell_key(cell_name, netlist.Type.CELL_MOSFET)
-                cell = netlist.Cell(cell_name, netlist.Type.CELL_MOSFET)
-                self.get_netlist().add_cell(cell)
-                self.get_netlist().add_cell_key(cell_key)
-        else:
-            msg = (
-                f"# error: model({cell_name}-{cell_type}) isnot exist!({self.get_cur_cell_name()})"
-            )
-            self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
-            exit()
-
+        cell = self.get_semiconductor_cell(inst_name, cell_name, cell_type)
         #
         inst.set_cell(cell)
         cell.increase_inst_count()
@@ -718,17 +590,7 @@ class Parser(run.Run):
         cell_pos = params_start_pos - 1
         #
         cell_name = tokens[cell_pos]
-        cell_type = netlist.Type.CELL_CELL
-        cell_key = netlist.get_cell_key(cell_name, cell_type)
-        cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
-        if None == cell:
-            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
-            if None == cell:
-                msg = f"# error: inst({inst_name}) subckt({cell_name}) isnot exist"
-                self.get_input().get_log().get_logger().error(
-                    f"{netlist.get_file_func_line_s(msg)}"
-                )
-                exit()
+        cell = self.get_cell_from_local_global(inst_name, cell_name, [netlist.Type.CELL_CELL])
         #
         inst.set_cell(cell)
         cell.increase_inst_count()
@@ -800,24 +662,80 @@ class Parser(run.Run):
                 inst_cell.get_param().add_equation(variable_name, equation_s, 0.0)
                 equation_end_pos = variable_name_pos
 
-    def get_subckt_type(self, type):
-        match type:
-            case netlist.Type.CELL_DIODE:
-                return netlist.Type.CELL_CELL_DIODE
-            case netlist.Type.CELL_NMOS:
-                return netlist.Type.CELL_CELL_NMOS
-            case netlist.Type.CELL_PMOS:
-                return netlist.Type.CELL_CELL_PMOS
-            case netlist.Type.CELL_NPN:
-                return netlist.Type.CELL_CELL_NPN
-            case netlist.Type.CELL_PNP:
-                return netlist.Type.CELL_CELL_PNP
-            case netlist.Type.CELL_NJF:
-                return netlist.Type.CELL_CELL_NJF
-            case netlist.Type.CELL_PJF:
-                return netlist.Type.CELL_CELL_PJF
-            case _:
-                return netlist.Type.INIT
+    def add_cell_model_1st(self, cell_name, cell_type):
+        # global
+        cell_key = netlist.get_cell_key(cell_name, cell_type)
+        if netlist.k_DEFAULT_TOP_CELL_NAME() == self.get_cur_cell_name():
+            cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+            if None == cell:
+                cell = netlist.Cell(cell_name, cell_type)
+                self.get_netlist().add_cell(cell)
+                self.get_netlist().add_cell_key(cell_key)
+                if netlist.Type.CELL_CELL == cell_type:
+                    self.set_cur_cell(cell)
+                    self.set_cur_cell_name(cell_name)
+        # local
+        else:
+            cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
+            if None == cell:
+                cell = netlist.Cell(cell_name, cell_type)
+                self.get_cur_cell().add_cell(cell)
+                self.get_cur_cell().add_cell_key(cell_key)
+                if netlist.Type.CELL_CELL == cell_type:
+                    self.set_cur_cell(cell)
+                    self.set_cur_cell_name(cell_name)
+
+    def get_cell_from_local_global(self, inst_name, cell_name, cell_types, malias=False):
+        for cell_type in cell_types:
+            cell_key = netlist.get_cell_key(cell_name, cell_type)
+            cell = self.get_cur_cell().get_cell_by_cell_key(cell_key)
+            if None != cell:
+                return cell
+            else:
+                cell = self.get_netlist().get_cell_by_cell_key(cell_key)
+                if None != cell:
+                    return cell
+        #
+        if None == cell:
+            if True == malias:
+                msg = f"# warn: because model({cell_name}) isnot exist, so model({cell_name}) is generated!"
+                self.get_input().get_log().get_logger().warn(f"{msg}")
+                cell = netlist.Cell(cell_name, cell_type)
+                self.get_netlist().add_cell(cell)
+                self.get_netlist().add_cell_key(cell_key)
+                return cell
+            else:
+                msg = f"# error: model({cell_name}-{cell_type}) of inst({inst_name}) isnot exist!({self.get_cur_cell_name()})"
+                self.get_input().get_log().get_logger().error(
+                    f"{netlist.get_file_func_line_s(msg)}"
+                )
+                exit()
+
+    def get_semiconductor_cell(self, inst_name, cell_name, cell_type):
+        if netlist.Type.CELL_DIODE == cell_type:
+            k_cells = [netlist.Type.CELL_DIODE]
+            return self.get_cell_from_local_global(inst_name, cell_name, k_cells)
+        elif netlist.Type.CELL_BJT == cell_type:
+            k_cells = [netlist.Type.CELL_BJT_NPN, netlist.Type.CELL_BJT_PNP, netlist.Type.CELL_BJT]
+            return self.get_cell_from_local_global(inst_name, cell_name, k_cells)
+        elif netlist.Type.CELL_JFET == cell_type:
+            k_cells = [
+                netlist.Type.CELL_JFET_NJF,
+                netlist.Type.CELL_JFET_PJF,
+                netlist.Type.CELL_JFET,
+            ]
+            return self.get_cell_from_local_global(inst_name, cell_name, k_cells)
+        elif netlist.Type.CELL_MOSFET == cell_type:
+            k_cells = [
+                netlist.Type.CELL_MOSFET_NMOS,
+                netlist.Type.CELL_MOSFET_PMOS,
+                netlist.Type.CELL_MOSFET,
+            ]
+            return self.get_cell_from_local_global(inst_name, cell_name, k_cells)
+        else:
+            msg = f"# error: model({cell_name}-{cell_type}) of inst({inst_name}) isnot exist!({self.get_cur_cell_name()})"
+            self.get_input().get_log().get_logger().error(f"{netlist.get_file_func_line_s(msg)}")
+            exit()
 
     def run(self):
         self.get_input().get_log().get_logger().info(

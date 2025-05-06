@@ -2,9 +2,7 @@ import sys
 import os
 import logging
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src"
-)
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/src")
 import log
 import run_makeiprobe
 import run_parser

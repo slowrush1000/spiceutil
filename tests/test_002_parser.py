@@ -10,7 +10,7 @@ from spiceutil import Spiceutil
 
 
 def test_002_parser():
-    output_prefix = "tests_result/test_002_parser"
+    output_prefix = "tests/test_002_parser"
     filename = (
         f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/tests/test_002_parser.toml"
     )

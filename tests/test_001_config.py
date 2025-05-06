@@ -11,7 +11,7 @@ from spiceutil import Spiceutil
 
 
 def test_001_config():
-    output_prefix = "test_001_config"
+    output_prefix = "tests/test_001_config"
     filename = (
         f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/tests/test_001_config.toml"
     )

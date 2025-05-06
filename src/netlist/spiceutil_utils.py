@@ -60,6 +60,39 @@ class Type(Enum):
     #
 
 
+class Runmode(Enum):
+    INIT = auto()
+    #
+    CONFIG = auto()
+    PARSER = auto()
+    FINDVNET = auto()
+    MAKEIPROBE = auto()
+    FLATTEN = auto()
+
+
+def k_RUNMODE_DIC():
+    runmode_dic = {
+        "config": Runmode.CONFIG,
+        "parser": Runmode.PARSER,
+        "findvnet": Runmode.FINDVNET,
+        "makeiprobe": Runmode.MAKEIPROBE,
+        "flatten": Runmode.FLATTEN,
+    }
+    return runmode_dic
+
+
+def get_runmode(runmode_s):
+    if runmode_s in k_RUNMODE_DIC():
+        return k_RUNMODE_DIC()[runmode_s]
+    else:
+        return Runmode.INIT
+
+
+def get_runmode_keys():
+    keys = k_RUNMODE_DIC().keys()
+    return " ".join(keys)
+
+
 def is_cell_model(type):
     cells = [
         Type.CELL_DIODE,
@@ -78,6 +111,76 @@ def is_cell_model(type):
         return True
     else:
         return False
+
+
+def get_inst_type_cell_type(first_char):
+    k_first_char_type_dic = {
+        "r": [Type.INST_R, Type.CELL_R],
+        "c": [Type.INST_C, Type.CELL_C],
+        "l": [Type.INST_L, Type.CELL_L],
+        "k": [Type.INST_K, Type.CELL_K],
+        "v": [Type.INST_VS, Type.CELL_VS],
+        "i": [Type.INST_CS, Type.CELL_CS],
+        "e": [Type.INST_VCVS, Type.CELL_VCVS],
+        "g": [Type.INST_VCCS, Type.CELL_VCCS],
+        "h": [Type.INST_CCVS, Type.CELL_CCVS],
+        "f": [Type.INST_CCCS, Type.CELL_CCCS],
+        "d": [Type.INST_DIODE, Type.CELL_DIODE],
+        "j": [Type.INST_JFET, Type.CELL_JFET],
+        "q": [Type.INST_BJT, Type.CELL_BJT],
+        "m": [Type.INST_MOSFET, Type.CELL_MOSFET],
+    }
+    if first_char in k_first_char_type_dic:
+        return k_first_char_type_dic[first_char][0], k_first_char_type_dic[first_char][1]
+    else:
+        return Type.INIT, Type.INIT
+    # return inst_type, cell_type
+    #    if "r" == first_char:
+    #        inst_type = Type.INST_R
+    #        cell_type = Type.CELL_R
+    #    elif "l" == first_char:
+    #        inst_type = Type.INST_L
+    #        cell_type = Type.CELL_L
+    #    elif "c" == first_char:
+    #        inst_type = Type.INST_C
+    #        cell_type = Type.CELL_C
+    #    elif "k" == first_char:
+    #        inst_type = Type.INST_K
+    #        cell_type = Type.CELL_K
+    #    elif "v" == first_char:
+    #        inst_type = Type.INST_VS
+    #        cell_type = Type.CELL_VS
+    #    elif "i" == first_char:
+    #        inst_type = Type.INST_CS
+    #        cell_type = Type.CELL_CS
+    #    elif "e" == first_char:
+    #        inst_type = Type.INST_VCVS
+    #        cell_type = Type.CELL_VCVS
+    #    elif "g" == first_char:
+    #        inst_type = Type.INST_VCCS
+    #        cell_type = Type.CELL_VCCS
+    #    elif "h" == first_char:
+    #        inst_type = Type.INST_CCVS
+    #        cell_type = Type.CELL_CCVS
+    #    elif "f" == first_char:
+    #        inst_type = Type.INST_CCCS
+    #        cell_type = Type.CELL_CCCS
+    #    elif "d" == first_char:
+    #        inst_type = Type.INST_DIODE
+    #        cell_type = Type.CELL_DIODE
+    #    elif "j" == first_char:
+    #        inst_type = Type.INST_JFET
+    #        cell_type = Type.CELL_JFET
+    #    elif "q" == first_char:
+    #        inst_type = Type.INST_BJT
+    #        cell_type = Type.CELL_BJT
+    #    elif "m" == first_char:
+    #        inst_type = Type.INST_MOSFET
+    #        cell_type = Type.CELL_MOSFET
+    #    else:
+    #        inst_type = Type.INIT
+    #        cell_type = Type.INIT
+    # return inst_type, cell_type
 
 
 def k_DEFAULT_TOP_CELL_NAME():
@@ -222,189 +325,6 @@ def write_wrap_line(file, line, textwidth=100):
         file.write(f"{wrap_line}")
 
 
-#
-#
-# class Run(Enum):
-#    INIT = auto()
-#    MAKEIPROBE = auto()
-#    FINDVNET = auto()
-#    FINDDECAP = auto()
-#
-#
-#
-#
-#
-# def get_k_default_cellname_r():
-#    return "r"
-#
-#
-# def get_k_default_cellname_l():
-#    return "l"
-#
-#
-# def get_k_default_cellname_c():
-#    return "c"
-#
-#
-# def get_k_default_cellname_k():
-#    return "k"
-#
-#
-# def get_k_default_cellname_vs():
-#    return "v"
-#
-#
-# def get_k_default_cellname_cs():
-#    return "i"
-#
-#
-# def get_k_default_cellname_vcvs():
-#    return "e"
-#
-#
-# def get_k_default_cellname_ccvs():
-#    return "g"
-#
-#
-# def get_k_default_cellname_vccs():
-#    return "h"
-#
-#
-# def get_k_default_cellname_cccs():
-#    return "f"
-#
-#
-# def get_k_default_cellname_dic():
-#    k_DEFAULT_CELLNAME_DIC = {
-#        Type.CELL_R: "r",
-#        Type.CELL_L: "l",
-#        Type.CELL_C: "c",
-#        Type.CELL_K: "k",
-#        Type.CELL_VS: "v",
-#        Type.CELL_CS: "i",
-#        Type.CELL_VCVS: "e",
-#        Type.CELL_CCVS: "g",
-#        Type.CELL_VCCS: "h",
-#        Type.CELL_CCCS: "f",
-#    }
-#    return k_DEFAULT_CELLNAME_DIC
-#
-#
-# def get_first_char_inst(type):
-#    k_DEFAULT_FIRST_CHAR_DIC = {
-#        Type.INST_R: "r",
-#        Type.INST_L: "l",
-#        Type.INST_C: "c",
-#        Type.INST_K: "k",
-#        Type.INST_VS: "v",
-#        Type.INST_CS: "i",
-#        Type.INST_VCVS: "e",
-#        Type.INST_CCVS: "g",
-#        Type.INST_VCCS: "h",
-#        Type.INST_CCCS: "f",
-#        Type.INST_DIODE: "d",
-#        Type.INST_MOSFET: "m",
-#        Type.INST_BJT: "q",
-#        Type.INST_JFET: "j",
-#        Type.INST_INST: "x",
-#    }
-#    if type in k_DEFAULT_FIRST_CHAR_DIC:
-#        return k_DEFAULT_FIRST_CHAR_DIC[type]
-#    else:
-#        return "*"
-#
-#
-# def get_k_default_cellname_set():
-#    k_DEFAULT_CELLLNAMES = ["r", "l", "c", "k", "v", "i", "e", "g", "h", "f"]
-#    k_DEFAULT_CELLNAME_SET = set(k_DEFAULT_CELLLNAMES)
-#    return k_DEFAULT_CELLNAME_SET
-#
-#
-# def get_subckt_types_set():
-#    k_SUBCKT_TYPES = [
-#        Type.CELL_CELL_DIODE,
-#        Type.CELL_CELL_NMOS,
-#        Type.CELL_CELL_PMOS,
-#        Type.CELL_CELL_NPN,
-#        Type.CELL_CELL_PNP,
-#        Type.CELL_CELL_NJF,
-#        Type.CELL_CELL_PJF,
-#    ]
-#    k_SUBCKT_TYPES_SET = set(k_SUBCKT_TYPES)
-#    return k_SUBCKT_TYPES_SET
-#
-#
-# def is_subckt_type(type):
-#    # subckt_types = get_subckt_types()
-#    # subckt_types_set = set(k_SUBCKT_TYPES)
-#    if type in get_subckt_types_set():
-#        return True
-#    else:
-#        return False
-#
-#
-# def get_device_types():
-#    return [
-#        Type.CELL_DIODE,
-#        Type.CELL_NMOS,
-#        Type.CELL_PMOS,
-#        Type.CELL_NPN,
-#        Type.CELL_PNP,
-#        Type.CELL_NJF,
-#        Type.CELL_PJF,
-#    ]
-#
-#
-# def get_type_name(type):
-#    match type:
-#        case Type.CELL_R:
-#            return "r"
-#        case Type.CELL_L:
-#            return "l"
-#        case Type.CELL_C:
-#            return "c"
-#        case Type.CELL_K:
-#            return "k"
-#        case Type.CELL_DIODE:
-#            return "d"
-#        case Type.CELL_NMOS:
-#            return "nmos"
-#        case Type.CELL_PMOS:
-#            return "pmos"
-#        case Type.CELL_NPN:
-#            return "npn"
-#        case Type.CELL_PNP:
-#            return "pnp"
-#        case Type.CELL_NJF:
-#            return "njf"
-#        case Type.CELL_PJF:
-#            return "pjf"
-#        case Type.CELL_VS:
-#            return "vs"
-#        case Type.CELL_CS:
-#            return "cs"
-#        case Type.CELL_VCVS:
-#            return "vcvs"
-#        case Type.CELL_CCVS:
-#            return "ccvs"
-#        case Type.CELL_VCCS:
-#            return "vccs"
-#        case Type.CELL_CCCS:
-#            return "cccs"
-#        case _:
-#            return ""
-#
-#
-# def get_error_str(msg):
-#    frame = inspect.currentframe().f_back
-#    filename = frame.f_code.co_filename
-#    function_name = frame.f_code.co_name
-#    line_number = frame.f_lineno
-#    return f"{msg}({os.path.basename(filename)}:{function_name}:{line_number})"
-#
-#
-
-
 # x0.x1.x2.x3 -> x0, x1, x2, x3
 def get_net_name(hier_netname):
     return hier_netname.split(".")[-1]
@@ -413,3 +333,23 @@ def get_net_name(hier_netname):
 
 def get_cell_key(name, type, delim="="):
     return f"{name}{delim}{type.name}"
+
+
+def split_cell_key(cell_key, delim="="):
+    tokens = cell_key.split(delim)
+    cell_name = tokens[0]
+    cell_type = Type[tokens[1].strip()]
+    return cell_name, cell_type
+
+
+def is_equal(s1, s2, casesensitive=True):
+    if True == casesensitive:
+        if s1 == s2:
+            return True
+        else:
+            return False
+    else:
+        if s1.lower() == s2.lower():
+            return True
+        else:
+            return False

@@ -4,22 +4,22 @@ import logging
 class Log:
     def __init__(self, output_prefix=""):
         #
-        self.m_file_name = f"{output_prefix}.log"
-        self.m_logger = logging.getLogger(self.m_file_name)
-        self.m_logger.setLevel(logging.INFO)
+        self.__file_name = f"{output_prefix}.log"
+        self.__logger = logging.getLogger(self.__file_name)
+        self.__logger.setLevel(logging.INFO)
         #
         stream_handler = logging.StreamHandler()
-        file_handler = logging.FileHandler(self.m_file_name, mode="w")
+        file_handler = logging.FileHandler(self.__file_name, mode="w")
         #
         # formatter = logging.Formatter("%(asctime)s %(message)s")
         # stream_handler.setFormatter(formatter)
         # file_handler.setFormatter(formatter)
         #
-        self.m_logger.addHandler(file_handler)
-        self.m_logger.addHandler(stream_handler)
+        self.__logger.addHandler(file_handler)
+        self.__logger.addHandler(stream_handler)
 
     def get_logger(self):
-        return self.m_logger
+        return self.__logger
 
     def set_level(self, level):
         if "NOTSET" == level:
@@ -38,19 +38,22 @@ class Log:
             self.set_level_info()
 
     def set_level_notset(self):
-        self.m_logger.setLevel(logging.NOTSET)
+        self.__logger.setLevel(logging.NOTSET)
 
     def set_level_debug(self):
-        self.m_logger.setLevel(logging.DEBUG)
+        self.__logger.setLevel(logging.DEBUG)
 
     def set_level_info(self):
-        self.m_logger.setLevel(logging.INFO)
+        self.__logger.setLevel(logging.INFO)
 
     def set_level_warning(self):
-        self.m_logger.setLevel(logging.WARNING)
+        self.__logger.setLevel(logging.WARNING)
 
     def set_level_error(self):
-        self.m_logger.setLevel(logging.ERROR)
+        self.__logger.setLevel(logging.ERROR)
 
     def set_level_critical(self):
-        self.m_logger.setLevel(logging.ERROR)
+        self.__logger.setLevel(logging.ERROR)
+
+    def get_file_name(self):
+        return self.__file_name

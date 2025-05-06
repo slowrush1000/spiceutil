@@ -16,7 +16,7 @@ class Makeiprobe(run.Run):
 
     def makeiprobe(self):
         self.get_input().get_log().get_logger().info(
-            f"# makeiprobe start ... {datetime.datetime.now()}"
+            f"# makeiprobe start ... {datetime.datetime.now()}\n"
         )
         top_cell = self.get_netlist().get_cell(
             self.get_input().get_top_cell_name(), netlist.Type.CELL_CELL
@@ -42,11 +42,10 @@ class Makeiprobe(run.Run):
             self.close_probe_file(probe_file)
             #
             self.get_input().get_log().get_logger().info(
-                f"# make iprobe({net_name}) end ... {
-                datetime.datetime.now()}"
+                f"# make iprobe({net_name}) end ... {datetime.datetime.now()}\n"
             )
         self.get_input().get_log().get_logger().info(
-            f"# make iprobe end ... {datetime.datetime.now()}"
+            f"# make iprobe end ... {datetime.datetime.now()}\n"
         )
 
     def makeiprobe_recursive(
@@ -126,10 +125,4 @@ class Makeiprobe(run.Run):
         probe_file.close()
 
     def run(self, args=None):
-        self.get_input().get_log().get_logger().info(
-            f"# makeiprobe start ... {datetime.datetime.now()}"
-        )
         self.makeiprobe()
-        self.get_input().get_log().get_logger().info(
-            f"# makeiprobe end ... {datetime.datetime.now()}"
-        )

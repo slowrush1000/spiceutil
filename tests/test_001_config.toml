@@ -1,8 +1,8 @@
 #################################################################
 # findvnet
 #################################################################
-#run            = "config" "parser" "findvnet"
-run             = "config"
+#runmode        = "config" "parser" "findvnet" "makeiprobe" "flatten"
+runmode         = "config"
 spice_file      = "data/001.spc"
 netnames        = "vdd vss vddq vssq"
 #top_cell        = "top_cell"
