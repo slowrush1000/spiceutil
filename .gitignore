@@ -1,9 +1,11 @@
+.venv
 .*.sw*
 *.log
 *.probe
 *.txt
 __pycache__*
 .VSCodeCounter
+backup/
 src/*.*.sw*
 src/__pycache__*
 src/*/.*.sw*

@@ -1,3 +1,10 @@
+# 명령어
+    % spiceutil output_prefix func       netlist_file < -topcell topcell > < -nets netname1 ... ... >
+    % spiceutil output_prefix makeiprobe netlist_file < -topcell topcell > < -nets netname1 ... ... > 
+    % spiceutil output_prefix findvnet   netlist_file < -topcell topcell > < -nets netname1 ... ... >
+    % spiceutil output_prefix flatten    netlist_file < -topcell topcell > < -nets netname1 ... ... >
+    % spiceutil output_prefix finddecap  netlist_file < -topcell topcell > < -power_nets netname1 ... ... > < -ground_nets netname1 ... ... >
+    
 # model 처리방법
 
 # spice netlist format

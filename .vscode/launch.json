@@ -1,0 +1,18 @@
+//{
+//    "version": "0.2.0",
+//    "configurations": [
+//        {
+//            "name": "spiceutil main",
+//            "type": "python",
+//            "request": "launch",
+//            "program": "${workspaceFolder}/spiceutil/main.py", // 특정 스크립트 지정
+//            "console": "integratedTerminal",
+//            "justMyCode": true,
+//            "args": [
+//                "output_prefix",
+//                "func",
+//                "netlist_file"
+//            ]
+//        }
+//    ]
+//}

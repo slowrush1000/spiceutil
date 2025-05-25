@@ -1,5 +1,6 @@
 import sys
 import os
+import unittest
 
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/spiceutil"
@@ -7,14 +8,16 @@ sys.path.append(
 from spiceutil import Spiceutil
 
 
-def test_002_parser():
-    output_prefix = "tests/test_002_parser"
-    filename = "data/001.spc"
-    func = "makeiprobe"
+def test_001_args():
+    output_prefix = "tests/test_001_args"
+    filename = f"dummy.ckt"
+    func = f"makeiprobe"
     args = [
         output_prefix,
         func,
         filename,
+        "-topcell",
+        "test_top_cell",
         "-nets",
         "vdd",
         "vss",
@@ -32,4 +35,4 @@ def test_002_parser():
 
 
 if __name__ == "__main__":
-    test_002_parser()
+    test_001_args()
