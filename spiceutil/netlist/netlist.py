@@ -2,9 +2,9 @@ import datetime
 import os
 import sys
 
-from .parameters import Parameters
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from netlist.parameters import Parameters
 import utils
 
 
@@ -12,7 +12,7 @@ class Netlist(Parameters):
     def __init__(self):
         super().__init__()
         self.__cell_dic = {}
-        self.__topcell_name = utils.Utils().get_k_topcell_name()
+        self.__topcell_name = utils.Const().get_topcell_name()
         self.__topcell = None
         self.__cell_key_delim = "="
         self.__global_nodenames = []

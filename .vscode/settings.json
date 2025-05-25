@@ -16,7 +16,7 @@
         "editor.formatOnSave": true,
     },
     "black-formatter.args": [
-        "--line-length", "90"
+        "--line-length", "99"
     ],
     "terminal.integrated.inheritEnv": false,
 }

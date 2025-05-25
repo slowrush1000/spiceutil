@@ -5,10 +5,10 @@ sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/
 from spiceutil import Spiceutil
 
 
-def test_002_parser():
-    output_prefix = "tests/test_002_parser"
+def test_004_findvnet():
+    output_prefix = "tests/test_004_findvnet"
     filename = "data/001.spc"
-    func = "parser"
+    func = "findvnet"
     args = [
         output_prefix,
         func,
@@ -18,12 +18,6 @@ def test_002_parser():
         "vss",
         "vddq",
         "vssq",
-        "-power_nets",
-        "vdd",
-        "vddq",
-        "-ground_nets",
-        "vss",
-        "vssq",
         "-debug",
     ]
     my_spiceutil = Spiceutil()
@@ -31,4 +25,4 @@ def test_002_parser():
 
 
 if __name__ == "__main__":
-    test_002_parser()
+    test_004_findvnet()

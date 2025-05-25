@@ -3,15 +3,20 @@ import os
 import inspect
 import datetime
 
-from .cell import Cell
-from .inst import Inst
-from .netlist import Netlist
-from .node import Node
-from .object import Object
-from .parameters import Parameters
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import utils
+from netlist.cell import Cell
+from netlist.inst import Inst
+from netlist.netlist import Netlist
+from netlist.node import Node
+from netlist.object import Object
+from netlist.parameters import Parameters
+from utils import Utils
+from utils import Const
+from utils import Type_tt
+from version import Version
+from performance import Performance
+from write import Write
 
 
 class Parser:
@@ -19,19 +24,18 @@ class Parser:
         self.__input = t_input
         self.__netlist = t_netlist
         self.__log = t_log
-        self.__curcell_name = utils.Utils().get_k_topcell_name()
+        #
+        self.__curcell_name = Const().get_topcell_name()
         self.__curcell = None
         self.__default_topcell = self.get_netlist().get_cell(
-            utils.Utils().get_k_topcell_name(), utils.Type.CELL_CELL
+            Const().get_topcell_name(), Type_tt.CELL_CELL
         )
         if None == self.__default_topcell:
-            self.__default_topcell = Cell(
-                utils.Utils().get_k_topcell_name(), utils.Type.CELL_CELL
-            )
+            self.__default_topcell = Cell(Const().get_topcell_name(), Type_tt.CELL_CELL)
             self.__netlist.add_cell(
-                utils.Utils().get_k_topcell_name(),
+                Const().get_topcell_name(),
                 self.__default_topcell,
-                utils.Type.CELL_CELL,
+                Type_tt.CELL_CELL,
             )
 
     def set_input(self, input):
@@ -69,8 +73,8 @@ class Parser:
 
     def init_cell(self):
         self.get_log().get_logger().info(f"# init cell start")
-        for type in utils.Utils().get_k_cellname_dic():
-            name = utils.Utils().get_k_cellname_dic()[type]
+        for type in Const().get_cellname_dic():
+            name = Const().get_cellname_dic()[type]
             cell = Cell(name, type)
             self.get_netlist().add_cell(name, cell, type)
         self.get_log().get_logger().info(f"# init cell end")
@@ -82,30 +86,37 @@ class Parser:
         )
         nlines = 0
         total_line = ""
-        with open(filename, "rt") as f:
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                nlines = nlines + 1
-                if 0 == (nlines % utils.Utils().get_k_line_step()):
-                    self.get_log().get_logger().info(
-                        f"    {nlines} lines ... {
-                             datetime.datetime.now()}"
-                    )
-                #
-                if False == self.get_input().get_casesensitive():
-                    line = line.lower()
-                line = line.lstrip().rstrip()
-                line = self.remove_comments(line, self.get_input().get_dollar_comment())
-                if 0 == len(line):
-                    continue
-                #
-                if "+" == line[0]:
-                    total_line = total_line + line[1:]
-                else:
-                    self.read_total_line_1st(total_line, filename)
+        try:
+            with open(filename, "rt") as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    nlines = nlines + 1
+                    if 0 == (nlines % Const().get_line_step()):
+                        self.get_log().get_logger().info(
+                            f"    {nlines} lines ... {
+                                datetime.datetime.now()}"
+                        )
+                    #
+                    if False == self.get_input().get_case_sense():
+                        line = line.lower()
+                    line = line.lstrip().rstrip()
+                    line = self.remove_comments(line, self.get_input().get_dollar_comment())
+                    if 0 == len(line):
+                        continue
+                    #
+                    if "+" == line[0]:
+                        total_line = total_line + line[1:]
+                    else:
+                        self.read_total_line_1st(total_line, filename)
                     total_line = line
+        except FileNotFoundError:
+            self.get_log().get_logger().error(f"# error: file{filename} open failed.")
+            self.__log.get_logger().info(
+                f"# spiceutil({Version().get_program_version()}) end ... {datetime.datetime.now()}\n"
+            )
+            exit()
         self.read_total_line_1st(total_line, filename)
         self.get_log().get_logger().info(
             f"    {nlines} lines ... {
@@ -131,7 +142,7 @@ class Parser:
 
     def read_total_line_1st_subckt_line(self, tokens):
         name = tokens[1]
-        type = utils.Type.CELL_CELL
+        type = Type_tt.CELL_CELL
         key = self.get_netlist().get_cell_key(name, type)
         cell = self.get_netlist().get_cell_by_key(key)
         if None == cell:
@@ -141,28 +152,28 @@ class Parser:
             self.get_netlist().add_key(key)
 
     def read_total_line_1st_ends_line(self):
-        self.set_curcell_name(utils.Utils().get_k_topcell_name())
+        self.set_curcell_name(Const().get_topcell_name())
         self.set_curcell(self.get_default_topcell())
 
     # .model name ...
     def read_total_line_1st_model_line(self, tokens):
         name = tokens[1].split(".")[0]
         type_name = tokens[2]
-        type = utils.Type.INIT
+        type = Type_tt.INIT
         if "d" == type_name:
-            type = utils.Type.CELL_DIODE
+            type = Type_tt.CELL_DIODE
         elif "npn" == type_name:
-            type = utils.Type.CELL_NPN
+            type = Type_tt.CELL_NPN
         elif "pnp" == type_name:
-            type = utils.Type.CELL_PNP
+            type = Type_tt.CELL_PNP
         elif "nmos" == type_name:
-            type = utils.Type.CELL_NMOS
+            type = Type_tt.CELL_NMOS
         elif "pmos" == type_name:
-            type = utils.Type.CELL_PMOS
+            type = Type_tt.CELL_PMOS
         elif "njf" == type_name:
-            type = utils.Type.CELL_NJF
+            type = Type_tt.CELL_NJF
         elif "pjf" == type_name:
-            type = utils.Type.CELL_PJF
+            type = Type_tt.CELL_PJF
         #
         cell = self.get_netlist().get_cell(name, type)
         if None == cell:
@@ -196,13 +207,13 @@ class Parser:
                 if not line:
                     break
                 nlines = nlines + 1
-                if 0 == (nlines % utils.Utils().get_k_line_step()):
+                if 0 == (nlines % Const().get_line_step()):
                     self.get_log().get_logger().info(
                         f"    {nlines} lines ... {
                         datetime.datetime.now()}"
                     )
                 #
-                if False == self.get_input().get_casesensitive():
+                if False == self.get_input().get_case_sense():
                     line = line.lower()
                 line = line.lstrip().rstrip()
                 line = self.remove_comments(line, self.get_input().get_dollar_comment())
@@ -238,25 +249,25 @@ class Parser:
             self.read_total_line_2nd_global_line(tokens)
         elif ".inc" == tokens[0] or ".include" == tokens[0]:
             self.read_total_line_2dn_include_line(tokens, filename)
-        elif utils.Utils().get_k_default_cellname_r() == tokens[0][0]:
+        elif Const().get_r_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_r_line(tokens)
-        elif utils.Utils().get_k_default_cellname_c() == tokens[0][0]:
+        elif Const().get_c_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_c_line(tokens)
-        elif utils.Utils().get_k_default_cellname_l() == tokens[0][0]:
+        elif Const().get_l_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_l_line(tokens)
-        elif utils.Utils().get_k_default_cellname_k() == tokens[0][0]:
-            self.read_total_line_2nd_k_line(tokens)
-        elif utils.Utils().get_k_default_cellname_vs() == tokens[0][0]:
+        elif Const().get_k_cell_name() == tokens[0][0]:
+            self.read_total_line_2nd_line(tokens)
+        elif Const().get_vs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_vs_line(tokens)
-        elif utils.Utils().get_k_default_cellname_cs() == tokens[0][0]:
+        elif Const().get_cs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_cs_line(tokens)
-        elif utils.Utils().get_k_default_cellname_vcvs() == tokens[0][0]:
+        elif Const().get_vcvs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_vcvs_line(tokens)
-        elif utils.Utils().get_k_default_cellname_ccvs() == tokens[0][0]:
+        elif Const().get_ccvs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_ccvs_line(tokens)
-        elif utils.Utils().get_k_default_cellname_vccs() == tokens[0][0]:
+        elif Const().get_vccs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_vccs_line(tokens)
-        elif utils.Utils().get_k_default_cellname_cccs() == tokens[0][0]:
+        elif Const().get_cccs_cell_name() == tokens[0][0]:
             self.read_total_line_2nd_cccs_line(tokens)
         elif "m" == tokens[0][0]:
             self.read_total_line_2nd_mosfet_line(tokens)
@@ -271,16 +282,16 @@ class Parser:
 
     def read_total_line_2nd_subckt_line(self, tokens):
         cell_name = tokens[1]
-        cell_type = utils.Type.CELL_CELL
+        cell_type = Type_tt.CELL_CELL
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            for cell_type in utils.Utils().get_subckt_types_set():
+            for cell_type in Utils().get_subckt_types_set():
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None != cell:
                     break
         if None == cell:
             msg = f"cell({cell_name}) dont exist!"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         self.set_curcell(cell)
         #
@@ -290,13 +301,14 @@ class Parser:
         for pos in range(2, parameter_start_pos):
             # self.get_log().get_logger().debug(f'{cell_name} - {tokens[pos]}')
             pin_name = tokens[pos]
-            if False == cell.is_exist_node(pin_name):
+            if None == cell.get_node(pin_name):
+                # if False == cell.is_exist_node(pin_name):
                 # self.get_log().get_logger().debug(f'{cell_name} - {pin_name}')
-                pin = Node(pin_name, utils.Type.NODE_PIN)
+                pin = Node(pin_name, Type_tt.NODE_PIN)
                 cell.add_pin(pin_name, pin)
             else:
                 msg = f"# error : cell({cell_name}) pin({pin_name}) is duplicate!"
-                self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+                self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
                 exit()
         #
         cell.make_pin_set()
@@ -325,43 +337,43 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_R)
+            inst = Inst(inst_name, Type_tt.INST_R)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
-        cell_name = utils.Utils().get_k_default_cellname_r()
+        cell_name = Const().get_r_cell_name()
         # rname n1 n2 model r = value ...
         if 4 == parameter_start_pos and 4 < len(tokens):
             cell_name = tokens[parameter_start_pos - 1]
         # self.get_log().get_logger().debug(f'debug- {cell_name}')
         # rname n1 n2 value
-        cell_type = utils.Type.CELL_R
+        cell_type = Type_tt.CELL_R
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         # rname n1 n2 model r = value ...
         if 4 == parameter_start_pos and 4 < len(tokens):
             self.read_parameter_inst(inst, tokens, parameter_start_pos)
         # rname n1 n2 value
         else:
-            parameter_name = utils.Utils().get_k_default_cellname_r()
+            parameter_name = Const().get_r_cell_name()
             parameter_equation = tokens[3]
             inst.add_parameter(parameter_name, parameter_equation)
 
@@ -371,39 +383,39 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_C)
+            inst = Inst(inst_name, Type_tt.INST_C)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
-        cell_name = utils.Utils().get_k_default_cellname_c()
+        cell_name = Const().get_c_cell_name()
         # cname n1 n2 model r = value ...
         if 4 == parameter_start_pos and 4 < len(tokens):
             cell_name = tokens[parameter_start_pos - 1]
-        cell_type = utils.Type.CELL_C
+        cell_type = Type_tt.CELL_C
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         if 4 == parameter_start_pos and 4 < len(tokens):
             self.read_parameter_inst(inst, tokens, parameter_start_pos)
         else:
-            parameter_name = utils.Utils().get_k_default_cellname_c()
+            parameter_name = Const().get_c_cell_name()
             parameter_equation = tokens[3]
             inst.add_parameter(parameter_name, parameter_equation)
 
@@ -413,77 +425,77 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_L)
+            inst = Inst(inst_name, Type_tt.INST_L)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             if 0 == len(inst.get_nodes()):
-                inst = Inst(inst_name, utils.Type.INST_L)
+                inst = Inst(inst_name, Type_tt.INST_L)
                 self.get_curcell().add_inst(inst_name, inst)
             else:
                 msg = f"# error : inductor({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-                self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+                self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
                 exit()
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
-        cell_name = utils.Utils().get_k_default_cellname_l()
+        cell_name = Const().get_l_cell_name()
         # lname n1 n2 model r = value ...
         if 4 == parameter_start_pos and 4 < len(tokens):
             cell_name = tokens[parameter_start_pos - 1]
-        cell_type = utils.Type.CELL_L
+        cell_type = Type_tt.CELL_L
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         if 4 == parameter_start_pos and 4 < len(tokens):
             self.read_parameter_inst(inst, tokens, parameter_start_pos)
         else:
-            parameter_name = utils.Utils().get_k_default_cellname_l()
+            parameter_name = Const().get_l_cell_name()
             parameter_equation = tokens[3]
             inst.add_parameter(parameter_name, parameter_equation)
 
     # kname inductor1 inductor2 value
 
-    def read_total_line_2nd_k_line(self, tokens):
+    def read_total_line_2nd_line(self, tokens):
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_K)
+            inst = Inst(inst_name, Type_tt.INST_K)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_k()
-        cell_type = utils.Type.CELL_K
+        cell_name = Const().get_k_cell_name()
+        cell_type = Type_tt.CELL_K
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             inductor_name = tokens[pos]
             inductor = self.get_curcell().get_inst(inductor_name)
             if None == inductor:
-                inductor = Inst(inst_name, utils.Type.INST_L)
+                inductor = Inst(inst_name, Type_tt.INST_L)
                 self.get_curcell().add_inst(inductor_name, inductor)
             inst.add_inst(inductor)
         #
-        parameter_name = utils.Utils().get_k_default_cellname_k()
+        parameter_name = Const().get_k_cell_name()
         parameter_equation = tokens[3]
         inst.add_parameter(parameter_name, parameter_equation)
 
@@ -493,27 +505,27 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_VS)
+            inst = Inst(inst_name, Type_tt.INST_VS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_vs()
-        cell_type = utils.Type.CELL_VS
+        cell_name = Const().get_vs_cell_name()
+        cell_type = Type_tt.CELL_VS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
         #
@@ -527,27 +539,27 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_CS)
+            inst = Inst(inst_name, Type_tt.INST_CS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_k()
-        cell_type = utils.Type.CELL_K
+        cell_name = Const().get_k_cell_name()
+        cell_type = Type_tt.CELL_K
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
         #
@@ -561,21 +573,21 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_VCVS)
+            inst = Inst(inst_name, Type_tt.INST_VCVS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_vcvs()
-        cell_type = utils.Type.CELL_VCVS
+        cell_name = Const().get_vcvs_cell_name()
+        cell_type = Type_tt.CELL_VCVS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 5):
             node_name = tokens[pos]
@@ -585,7 +597,7 @@ class Parser:
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
         #
-        parameter_name = utils.Utils().get_k_default_cellname_vcvs()
+        parameter_name = Const().get_vcvs_cell_name()
         parameter_equation = tokens[5]
         inst.add_parameter(parameter_name, parameter_equation)
 
@@ -595,21 +607,21 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_CCVS)
+            inst = Inst(inst_name, Type_tt.INST_CCVS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_ccvs()
-        cell_type = utils.Type.CELL_CCVS
+        cell_name = Const().get_ccvs_cell_name()
+        cell_type = Type_tt.CELL_CCVS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 5):
             node_name = tokens[pos]
@@ -619,7 +631,7 @@ class Parser:
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
         #
-        parameter_name = utils.Utils().get_k_default_cellname_ccvs()
+        parameter_name = Const().get_ccvs_cell_name()
         parameter_equation = tokens[5]
         inst.add_parameter(parameter_name, parameter_equation)
 
@@ -629,21 +641,21 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_VCCS)
+            inst = Inst(inst_name, Type_tt.INST_VCCS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_vccs()
-        cell_type = utils.Type.CELL_VCCS
+        cell_name = Const().get_vccs_cell_name()
+        cell_type = Type_tt.CELL_VCCS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
@@ -656,11 +668,11 @@ class Parser:
         vcontrol_name = tokens[3]
         vcontrol = self.get_curcell().get_inst(vcontrol_name)
         if None == vcontrol:
-            vcontrol = Inst(vcontrol_name, utils.Type.INST_VS)
+            vcontrol = Inst(vcontrol_name, Type_tt.INST_VS)
             self.get_curcell().add_inst(vcontrol_name, vcontrol)
         inst.add_inst(vcontrol)
         #
-        parameter_name = utils.Utils().get_k_default_cellname_vccs()
+        parameter_name = Const().get_vccs_cell_name()
         parameter_equation = tokens[4]
         inst.add_parameter(parameter_name, parameter_equation)
 
@@ -670,21 +682,21 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_CCCS)
+            inst = Inst(inst_name, Type_tt.INST_CCCS)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
-        cell_name = utils.Utils().get_k_default_cellname_cccs()
-        cell_type = utils.Type.CELL_CCCS
+        cell_name = Const().get_cccs_cell_name()
+        cell_type = Type_tt.CELL_CCCS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
@@ -697,11 +709,11 @@ class Parser:
         vcontrol_name = tokens[3]
         vcontrol = self.get_curcell().get_inst(vcontrol_name)
         if None == vcontrol:
-            vcontrol = Inst(vcontrol_name, utils.Type.INST_VS)
+            vcontrol = Inst(vcontrol_name, Type_tt.INST_VS)
             self.get_curcell().add_inst(vcontrol_name, vcontrol)
         inst.add_inst(vcontrol)
         #
-        parameter_name = utils.Utils().get_k_default_cellname_cccs()
+        parameter_name = Const().get_cccs_cell_name()
         parameter_equation = tokens[4]
         inst.add_parameter(parameter_name, parameter_equation)
 
@@ -711,38 +723,38 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_MOSFET)
+            inst = Inst(inst_name, Type_tt.INST_MOSFET)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = 6
         cell_name = tokens[5].lower()
-        cell_type = utils.Type.CELL_NMOS
+        cell_type = Type_tt.CELL_NMOS
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            cell_type = utils.Type.CELL_PMOS
+            cell_type = Type_tt.CELL_PMOS
             cell = self.get_netlist().get_cell(cell_name, cell_type)
             if None == cell:
-                cell_type = utils.Type.CELL_MOSFET
+                cell_type = Type_tt.CELL_MOSFET
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None == cell:
-                    cell_type = utils.Type.CELL_MOSFET
+                    cell_type = Type_tt.CELL_MOSFET
                     cell = Cell(cell_name, cell_type)
                     self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 5):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         self.read_parameter_inst(inst, tokens, parameter_start_pos)
 
@@ -752,35 +764,35 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_BJT)
+            inst = Inst(inst_name, Type_tt.INST_BJT)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = 5
         cell_name = tokens[4].lower()
-        cell_type = utils.Type.CELL_NPN
+        cell_type = Type_tt.CELL_NPN
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            cell_type = utils.Type.CELL_PNP
+            cell_type = Type_tt.CELL_PNP
             cell = self.get_netlist().get_cell(cell_name, cell_type)
             if None == cell:
-                cell_type = utils.Type.CELL_BJT
+                cell_type = Type_tt.CELL_BJT
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None == cell:
-                    cell_type = utils.Type.CELL_BJT
+                    cell_type = Type_tt.CELL_BJT
                     cell = Cell(cell_name, cell_type)
                     self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 4):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
             node.add_inst(inst_name, inst)
@@ -793,35 +805,35 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_JFET)
+            inst = Inst(inst_name, Type_tt.INST_JFET)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = 5
         cell_name = tokens[4].lower()
-        cell_type = utils.Type.CELL_JFET
+        cell_type = Type_tt.CELL_JFET
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            cell_type = utils.Type.CELL_PJF
+            cell_type = Type_tt.CELL_PJF
             cell = self.get_netlist().get_cell(cell_name, cell_type)
             if None == cell:
-                cell_type = utils.Type.CELL_NJF
+                cell_type = Type_tt.CELL_NJF
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None == cell:
-                    cell_type = utils.Type.CELL_JFET
+                    cell_type = Type_tt.CELL_JFET
                     cell = Cell(cell_name, cell_type)
                     self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 4):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
             node.add_inst(inst_name, inst)
@@ -834,31 +846,31 @@ class Parser:
         inst_name = tokens[0]
         inst = self.get_curcell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_DIODE)
+            inst = Inst(inst_name, Type_tt.INST_DIODE)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = 4
         cell_name = tokens[3].lower()
-        cell_type = utils.Type.CELL_DIODE
+        cell_type = Type_tt.CELL_DIODE
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
             cell = Cell(cell_name, cell_type)
             self.get_netlist().add_cell(cell_name, cell, cell_type)
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, 3):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         self.read_parameter_inst(inst, tokens, parameter_start_pos)
 
@@ -870,69 +882,69 @@ class Parser:
         inst = cur_cell.get_inst(inst_name)
         # inst = self.get_cur_cell().get_inst(inst_name)
         if None == inst:
-            inst = Inst(inst_name, utils.Type.INST_INST)
+            inst = Inst(inst_name, Type_tt.INST_INST)
             self.get_curcell().add_inst(inst_name, inst)
         else:
             msg = f"# error : inst({inst_name}) is duplicate in cell({self.get_curcell_name()})"
-            self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+            self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             exit()
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
         cell_name = tokens[parameter_start_pos - 1].lower()
-        cell_type = utils.Type.CELL_CELL
+        cell_type = Type_tt.CELL_CELL
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            for cell_type in utils.Utils().get_subckt_types_set():
-                # for cell_type in netlist.k_SUBCKT_TYPES:
+            for cell_type in Utils().get_subckt_types_set():
+                # for cell_type in netlist.SUBCKT_TYPES:
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None != cell:
                     break
             if None == cell:
-                self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+                self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
                 exit()
         #
         parameter_start_pos = self.read_parameter_start_pos(tokens)
         cell_name = tokens[parameter_start_pos - 1].lower()
-        cell_type = utils.Type.CELL_CELL
+        cell_type = Type_tt.CELL_CELL
         cell = self.get_netlist().get_cell(cell_name, cell_type)
         if None == cell:
-            for cell_type in utils.Utils().get_subckt_types_set():
-                # for cell_type in netlist.k_SUBCKT_TYPES:
+            for cell_type in Utils().get_subckt_types_set():
+                # for cell_type in netlist.SUBCKT_TYPES:
                 cell = self.get_netlist().get_cell(cell_name, cell_type)
                 if None != cell:
                     break
             if None == cell:
                 msg = f"# error : inst({inst_name}) cell({cell_name}) isnot exist!"
-                self.get_log().get_logger().error(f"{utils.Utils().get_error_str(msg)}")
+                self.get_log().get_logger().error(f"{Utils().get_error_str(msg)}")
             # cell_type = utils.Type.CELL_CELL
             # cell = self.get_netlist().get_cell(cell_name, cell_type)
             # cell = Cell(cell_name, cell_type)
             # self.get_netlist().add_cell(cell_name, cell, cell_type)
         #
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, parameter_start_pos - 1):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
             # cell_type = utils.Type.CELL_CELL
             # cell = self.get_netlist().get_cell(cell_name, cell_type)
             # cell = Cell(cell_name, cell_type)
             # self.get_netlist().add_cell(cell_name, cell, cell_type)
         #
         inst.set_cell(cell)
-        cell.increase_inst_size()
+        # cell.increase_inst_size()
         #
         for pos in range(1, parameter_start_pos - 1):
             node_name = tokens[pos]
             node = self.get_curcell().get_node(node_name)
             if None == node:
-                node = Node(node_name, utils.Type.NODE_NODE)
+                node = Node(node_name, Type_tt.NODE_NODE)
                 self.get_curcell().add_node(node_name, node)
             inst.add_node(node)
-            node.add_inst(inst_name, inst)
+            node.add_inst(inst)
         #
         self.read_parameter_inst(inst, tokens, parameter_start_pos)
 
@@ -978,6 +990,7 @@ class Parser:
 
     def read_parameter_cell(self, cell, tokens, parameter_start_pos):
         name_pos = parameter_start_pos
+        equation_end_pos = len(tokens)
         for pos in range(len(tokens) - 1, parameter_start_pos, -1):
             if "=" == tokens[pos]:
                 name_pos = pos - 1
@@ -986,10 +999,7 @@ class Parser:
                 name = tokens[name_pos]
                 equation = " ".join(tokens[equation_start_pos:equation_end_pos])
                 equation = (
-                    equation.replace(" ", "")
-                    .replace("\t", "")
-                    .replace("'", "")
-                    .replace('"', "")
+                    equation.replace(" ", "").replace("\t", "").replace("'", "").replace('"', "")
                 )
                 cell.add_parameter(name, equation)
                 equation_end_pos = name_pos
@@ -1005,32 +1015,29 @@ class Parser:
                 name = tokens[name_pos]
                 equation = " ".join(tokens[equation_start_pos:equation_end_pos])
                 equation = (
-                    equation.replace(" ", "")
-                    .replace("\t", "")
-                    .replace("'", "")
-                    .replace('"', "")
+                    equation.replace(" ", "").replace("\t", "").replace("'", "").replace('"', "")
                 )
                 inst.add_parameter(name, equation)
                 equation_end_pos = name_pos
 
     def get_subckt_type(self, type):
         match type:
-            case utils.Type.CELL_DIODE:
-                return utils.Type.CELL_CELL_DIODE
-            case utils.Type.CELL_NMOS:
-                return utils.Type.CELL_CELL_NMOS
-            case utils.Type.CELL_PMOS:
-                return utils.Type.CELL_CELL_PMOS
-            case utils.Type.CELL_NPN:
-                return utils.Type.CELL_CELL_NPN
-            case utils.Type.CELL_PNP:
-                return utils.Type.CELL_CELL_PNP
-            case utils.Type.CELL_NJF:
-                return utils.Type.CELL_CELL_NJF
-            case utils.Type.CELL_PJF:
-                return utils.Type.CELL_CELL_PJF
+            case Type_tt.CELL_DIODE:
+                return Type_tt.CELL_CELL_DIODE
+            case Type_tt.CELL_NMOS:
+                return Type_tt.CELL_CELL_NMOS
+            case Type_tt.CELL_PMOS:
+                return Type_tt.CELL_CELL_PMOS
+            case Type_tt.CELL_NPN:
+                return Type_tt.CELL_CELL_NPN
+            case Type_tt.CELL_PNP:
+                return Type_tt.CELL_CELL_PNP
+            case Type_tt.CELL_NJF:
+                return Type_tt.CELL_CELL_NJF
+            case Type_tt.CELL_PJF:
+                return Type_tt.CELL_CELL_PJF
             case _:
-                return utils.Type.INIT
+                return Type_tt.INIT
 
     def find_subckt_model(self):
         self.get_log().get_logger().info(
@@ -1041,12 +1048,10 @@ class Parser:
         delete_cell_keys = []
         for key in self.get_netlist().get_cell_dic():
             cell = self.get_netlist().get_cell_by_key(key)
-            if utils.Type.CELL_CELL == cell.get_type():
-                key_0 = self.get_netlist().get_cell_key(
-                    cell.get_name(), utils.Type.CELL_CELL
-                )
-                for type_1 in utils.Utils().get_device_types():
-                    if True == self.get_netlist().is_exist_cell(cell.get_name(), type_1):
+            if Type_tt.CELL_CELL == cell.get_type():
+                key_0 = self.get_netlist().get_cell_key(cell.get_name(), Type_tt.CELL_CELL)
+                for type_1 in Utils().get_device_types():
+                    if True == self.get_netlist().is_in_cell(cell.get_name(), type_1):
                         subckt_type = self.get_subckt_type(type_1)
                         insert_name_cell_types.append([cell.get_name(), subckt_type])
                         delete_cell_keys.append(key_0)
@@ -1068,30 +1073,29 @@ class Parser:
 
     def run(self):
         self.get_log().get_logger().info(
-            f"# read file({self.get_input().get_spice_filename()}) start ... {datetime.datetime.now()}\n"
+            f"# read file({self.get_input().get_netlist_file_name()}) start ... {datetime.datetime.now()}\n"
         )
         #
         self.init_cell()
         self.get_netlist().print_info(self.get_log().get_logger())
-        self.read_1st(self.get_input().get_spice_filename())
+        self.read_1st(self.get_input().get_netlist_file_name())
         self.find_subckt_model()
         self.get_netlist().print_info(self.get_log().get_logger())
-        if True == self.get_input().get_is_write_1st_spc():
+        if True == self.get_input().get_debug():
             spc_1st_filename = f"{self.get_input().get_output_prefix()}.1st.spc"
-            my_write = run_write.Write(self.get_input(), self.get_netlist())
-            my_write.set_filename(spc_1st_filename)
+            my_write = Write(self.get_input(), self.get_netlist(), 100, False, spc_1st_filename)
             my_write.run()
         #
-        self.read_2nd(self.get_input().get_spice_filename())
+        self.read_2nd(self.get_input().get_netlist_file_name())
         self.get_netlist().print_info(self.get_log().get_logger())
-        if True == self.get_input().get_is_write_2nd_spc():
+        if True == self.get_input().get_debug():
             spc_2nd_filename = f"{self.get_input().get_output_prefix()}.2nd.spc"
-            my_write = run_write.Write(self.get_input(), self.get_netlist())
-            my_write.set_filename(spc_2nd_filename)
+            my_write = Write(self.get_input(), self.get_netlist())
+            my_write.set_file_name(spc_2nd_filename)
             my_write.run()
         #
         self.get_log().get_logger().info(
-            f"# read file({self.get_input().get_spice_filename()}) end ... {datetime.datetime.now()}\n"
+            f"# read file({self.get_input().get_netlist_file_name()}) end ... {datetime.datetime.now()}\n"
         )
 
 

@@ -10,7 +10,7 @@ import utils
 
 
 class Inst(Object, Parameters):
-    def __init__(self, name="", type=utils.Type.INIT, selected=False):
+    def __init__(self, name="", type=utils.Type_tt.INIT, selected=False):
         super().__init__(name, type, selected)
         self.__nodes = []
         self.__insts = []

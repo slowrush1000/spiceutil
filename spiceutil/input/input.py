@@ -2,7 +2,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import utils
+from utils import Const
 
 
 class Input:
@@ -11,10 +11,14 @@ class Input:
         self.__output_prefix = "spiceutil"
         self.__func = ""
         self.__netlist_file_name = ""
-        self.__topcell_name = ""
+        self.__topcell_name = Const().get_topcell_name()
         self.__net_names = []
         self.__power_net_names = []
         self.__ground_net_names = []
+        self.__case_sense = False
+        self.__dollar_comment = False  # $ is comments
+        self.__debug = False
+        self.__all_probe = False
 
     def set_args(self, args):
         self.__args = args
@@ -67,13 +71,41 @@ class Input:
     def get_ground_net_names(self):
         return self.__ground_net_names
 
+    def set_case_sense(self, case_sense):
+        self.__case_sense = case_sense
+
+    def get_case_sense(self):
+        return self.__case_sense
+
+    def set_dollar_comment(self, dollar_comment):
+        self.__dollar_comment = dollar_comment
+
+    def get_dollar_comment(self):
+        return self.__dollar_comment
+
+    def set_debug(self, debug):
+        self.__debug = debug
+
+    def get_debug(self):
+        return self.__debug
+
+    def set_all_probe(self, all_probe):
+        self.__all_probe = all_probe
+
+    def get_all_probe(self):
+        return self.__all_probe
+
     def get_inputs_str(self):
-        s1 = f"args          : {' '.join(self.__args)}\n"
-        s1 += f"output prefix   : {self.__output_prefix}\n"
-        s1 += f"func            : {self.__func}\n"
-        s1 += f"netlist file    : {self.__netlist_file_name}\n"
-        s1 += f"topcell         : {self.__topcell_name}\n"
-        s1 += f"nets            : {' '.join(self.__net_names)}\n"
-        s1 += f"power nets      : {' '.join(self.__power_net_names)}\n"
-        s1 += f"ground nets     : {' '.join(self.__ground_net_names)}\n"
+        s1 = f"args            : {' '.join(self.__args)}\n"
+        s1 += f"output prefix   : {self.get_output_prefix()}\n"
+        s1 += f"func            : {self.get_func()}\n"
+        s1 += f"netlist file    : {self.get_netlist_file_name()}\n"
+        s1 += f"topcell         : {self.get_topcell_name()}\n"
+        s1 += f"nets            : {' '.join(self.get_net_names())}\n"
+        s1 += f"power nets      : {' '.join(self.get_power_net_names())}\n"
+        s1 += f"ground nets     : {' '.join(self.get_ground_net_names())}\n"
+        s1 += f"case sense      : {self.get_case_sense()}\n"
+        s1 += f"dollar comment  : {self.get_dollar_comment()}\n"
+        s1 += f"debug           : {self.get_debug()}\n"
+        s1 += f"all_probe       : {self.get_all_probe()}\n"
         return s1

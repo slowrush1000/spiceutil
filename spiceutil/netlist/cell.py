@@ -1,17 +1,17 @@
 import os
 import sys
 
-from .inst import Inst
-from .node import Node
-from .object import Object
-from .parameters import Parameters
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from netlist.inst import Inst
+from netlist.node import Node
+from netlist.object import Object
+from netlist.parameters import Parameters
 import utils
 
 
 class Cell(Object, Parameters):
-    def __init__(self, name="", type=utils.Type.INIT, selected=False):
+    def __init__(self, name="", type=utils.Type_tt.INIT, selected=False):
         super().__init__(name, type, selected)
         self.__inst_dic = {}  # key : name, data : Inst
         self.__node_dic = {}  # key : name, data : Node
@@ -71,19 +71,19 @@ class Cell(Object, Parameters):
 
     def get_netlist_str(self, write_subckt_ends=True):
         match self.get_type():
-            case utils.Type.CELL_CELL:
+            case utils.Type_tt.CELL_CELL:
                 return self.get_netlist_str_cell(write_subckt_ends)
-            case utils.Type.CELL_NMOS:
+            case utils.Type_tt.CELL_NMOS:
                 return self.get_netlist_str_model()
-            case utils.Type.CELL_PMOS:
+            case utils.Type_tt.CELL_PMOS:
                 return self.get_netlist_str_model()
-            case utils.Type.CELL_NPN:
+            case utils.Type_tt.CELL_NPN:
                 return self.get_netlist_str_model()
-            case utils.Type.CELL_PNP:
+            case utils.Type_tt.CELL_PNP:
                 return self.get_netlist_str_model()
-            case utils.Type.CELL_NJF:
+            case utils.Type_tt.CELL_NJF:
                 return self.get_netlist_str_model()
-            case utils.Type.CELL_PJF:
+            case utils.Type_tt.CELL_PJF:
                 return self.get_netlist_str_model()
             case _:
                 return ""

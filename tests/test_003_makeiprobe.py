@@ -6,9 +6,9 @@ from spiceutil import Spiceutil
 
 
 def test_002_parser():
-    output_prefix = "tests/test_002_parser"
+    output_prefix = "tests/test_003_makeiprobe"
     filename = "data/001.spc"
-    func = "parser"
+    func = "makeiprobe"
     args = [
         output_prefix,
         func,

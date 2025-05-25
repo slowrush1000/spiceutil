@@ -1,14 +1,14 @@
 import os
 import sys
 
-from .object import Object
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from netlist.object import Object
 import utils
 
 
 class Node(Object):
-    def __init__(self, name="", type=utils.Type.INIT, selected=False):
+    def __init__(self, name="", type=utils.Type_tt.INIT, selected=False):
         super().__init__(name, type, selected)
         self.__insts = []
 

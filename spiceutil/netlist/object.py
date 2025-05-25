@@ -6,7 +6,7 @@ import utils
 
 
 class Object:
-    def __init__(self, name="", type=utils.Type.INIT, selected=False):
+    def __init__(self, name="", type=utils.Type_tt.INIT, selected=False):
         super().__init__()
         self.__name = name
         self.__type = type

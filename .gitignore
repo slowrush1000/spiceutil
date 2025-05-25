@@ -10,5 +10,6 @@ src/*.*.sw*
 src/__pycache__*
 src/*/.*.sw*
 src/*/__pycache__*
-tests_result/*
-temp
+tests/*.log
+tests/*.probe
+tests/*.spc
